@@ -1,21 +1,24 @@
 * Download the US Census zipcode cartographic areas
 https://www2.census.gov/geo/tiger/TIGER2020/ZCTA520/tl_2020_us_zcta520.zip
 * The record layout is described by this document:https://www2.census.gov/geo/pdfs/maps-data/data/tiger/tgrshp2021/TGRSHP2021_TechDoc.pdf
-* The column of interest is "ZCTA5CE20", which has the zipcode
+* Note that the column of interest is "ZCTA5CE20", which has the zipcode
 
-* Using the spatialite cli utility from spatialite-tools:
+* Using the spatialite cli utility, import the shapefile into a new db:
 Load the unzipped shapefile into the database
-`spatialite> .loadshp tl_2020_us_zcta520 zcta CP1252 4326`
+`spatialite> .loadshp raw/tl_2020_us_zcta520 zcta_shp ASCII 4326`
 
-Sample query
-SELECT count(*) zcta WHERE MBRContains(BuildMBR(x1,y1,x2,y2, 4326), geometry);
+* Build an R-tree spatial index to speed up spatial queries
+SELECT CreateSpatialIndex('zcta_shp', 'geometry');
 
-* Build GeoJSON geometries
+* Back on the commandline, Extract/simplify GeoJSON from the shapefile
 npx mapshaper raw/tl_2020_us_zcta520.shp -simplify dp 20% -o format=geojson geo.json
 
-* Import the geojson into the spatial database (this step can take upwards of 30 minutes)
-python3 main.py
+* Import the GeoJSON into the spatialite lite database
+geojson-to-sqlite db.sqlite3 zcta_geojson raw/geo.json
 
-# Create a spatial index to greatly speed up queries
-SELECT CreateSpatialIndex('zcta', 'geometry');
+Sample query
+select * from zcta_shp where MBRContains(BuildMBR(-85.605165, 30.357851, -80.839729, 35.000659, 4326), "geometry");
 
+
+* This returns the zipcode and geojson feature off all ZCTAs in Georgia
+SELECT zcta_geojson.ZCTA5CE20, zcta_geojson.geometry from zcta_geojson inner join (select ZCTA5CE20 from zcta_shp where MBRContains(BuildMBR(-85.605165, 30.357851, -80.839729, 35.000659, 4326), "geometry")) as zcta_shp ON zcta_geojson.ZCTA5CE20 = zcta_shp.ZCTA5CE20;

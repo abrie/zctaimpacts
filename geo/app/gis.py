@@ -1,3 +1,4 @@
+import json
 from flask import Blueprint, flash, g, redirect, render_template, request, url_for
 from werkzeug.exceptions import abort
 
@@ -22,6 +23,7 @@ def zcta():
 
     return {
         "results": [
-            {"zipcode": row["ZCTA5CE20"], "geometry": row["geometry"]} for row in rows
+            {"zipcode": row["ZCTA5CE20"], "geometry": json.loads(row["geometry"])}
+            for row in rows
         ]
     }

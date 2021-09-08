@@ -1,14 +1,21 @@
-Download the US Census zipcode cartographic areas
-curl -o raw/zacta.zip https://www2.census.gov/geo/tiger/TIGER2020/ZCTA520/tl_2020_us_zcta520.zip
+* Download the US Census zipcode cartographic areas
+https://www2.census.gov/geo/tiger/TIGER2020/ZCTA520/tl_2020_us_zcta520.zip
+* The record layout is described by this document:https://www2.census.gov/geo/pdfs/maps-data/data/tiger/tgrshp2021/TGRSHP2021_TechDoc.pdf
+* The column of interest is "ZCTA5CE20", which has the zipcode
 
-Unzip it.
-
-Using the spatialite cli utility from spatialite-tools:
-Load the shapefile into the database
+* Using the spatialite cli utility from spatialite-tools:
+Load the unzipped shapefile into the database
 `spatialite> .loadshp tl_2020_us_zcta520 zcta CP1252 4326`
-
-Create a spatial index to greatly speed up queries
-SELECT CreateSpatialIndex('zcta', 'geometry');
 
 Sample query
 SELECT count(*) zcta WHERE MBRContains(BuildMBR(x1,y1,x2,y2, 4326), geometry);
+
+* Build GeoJSON geometries
+npx mapshaper raw/tl_2020_us_zcta520.shp -simplify dp 20% -o format=geojson geo.json
+
+* Import the geojson into the spatial database (this step can take upwards of 30 minutes)
+python3 main.py
+
+# Create a spatial index to greatly speed up queries
+SELECT CreateSpatialIndex('zcta', 'geometry');
+

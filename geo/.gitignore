@@ -1,2 +1,3 @@
 raw/
+pyrightconfig.json
 db.sqlite3

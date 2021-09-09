@@ -1,6 +1,10 @@
 click==8.0.1
 click-default-group==1.2.2
 dateutils==0.6.12
+Flask==2.0.1
+itsdangerous==2.0.1
+Jinja2==3.0.1
+MarkupSafe==2.0.1
 python-dateutil==2.8.2
 pytz==2021.1
 Shapely==1.7.1
@@ -9,3 +13,4 @@ spatialite==0.0.3
 sqlite-fts4==1.0.1
 sqlite-utils==3.17
 tabulate==0.8.9
+Werkzeug==2.0.1

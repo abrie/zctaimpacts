@@ -43,6 +43,7 @@ class Endpoint:
         return response.json()
 
     def get_direct_requirements(self, model, sector):
+        # May be referred to as the 'Technology' or 'A' matrix
         response = requests.get(
             urljoin([self.base_url, model["id"], "matrix", "A"]),
             params={"col": sector["index"]},
@@ -225,4 +226,3 @@ def run(args):
     demands = endpoint.get_demands(model)
     demand_vector = endpoint.get_demand_vector(model, demands[0])
     dump(demand_vector)
-

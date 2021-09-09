@@ -32,15 +32,24 @@ export default function App() {
   }
 
   return (
-    <MapContainer center={center} zoom={16}>
-      <TileLayer
-        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        attribution='&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
-      />
-      <MyComponent />
-      {layers.map(({ zipcode, geometry }) => (
-        <GeoJSON key={zipcode} data={geometry} />
-      ))}
-    </MapContainer>
+    <div className="container mx-auto flex flex-col h-screen p-2">
+      <MapContainer
+        center={center}
+        zoom={11}
+        className="w-full h-full flex-grow"
+      >
+        <TileLayer
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          attribution='&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
+        />
+        <MyComponent />
+        {layers.map(({ zipcode, geometry }) => (
+          <GeoJSON key={zipcode} data={geometry} />
+        ))}
+      </MapContainer>
+      <div className="flex-grow-0 h10 bg-gray-500 p-1 h-9 text-white">
+        {status}
+      </div>
+    </div>
   );
 }

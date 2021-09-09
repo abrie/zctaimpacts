@@ -2,7 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-.leaflet-container {
-  width: 100%;
-  height: 100vh;
+.leaflet-tile-pane {
+  -webkit-filter: grayscale(100%);
+  filter: grayscale(100%);
 }

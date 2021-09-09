@@ -146,14 +146,16 @@ class Endpoint:
         return response.json()
 
     def get_demand_vector(self, model, demand):
-        response = requests.get(urljoin([self.base_url,model["id"],"demands", demand["id"]]), headers=self.headers)
+        response = requests.get(
+            urljoin([self.base_url, model["id"], "demands", demand["id"]]),
+            headers=self.headers,
+        )
         return response.json()
+
 
 def run(args):
     base_url = "https://api.edap-cluster.com/useeio/api/"
     secrets = load_secrets(args.secrets)
-    headers = {}
-    headers["x-api-key"] = secrets["apiKey"]
 
     endpoint = Endpoint(base_url, secrets["apiKey"])
     models = endpoint.get_models()

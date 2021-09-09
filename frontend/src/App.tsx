@@ -6,10 +6,11 @@ import axios from "axios";
 const center: LatLngExpression = [33.813534, -84.403339];
 export default function App() {
   const [layers, setLayers] = useState([]);
+  const [status, setStatus] = useState("");
 
   function MyComponent() {
     const map = useMapEvents({
-      dragend: () => {
+      dragend: async () => {
         const bounds = map.getBounds();
         const data = {
           x1: bounds.getWest(),
@@ -17,9 +18,10 @@ export default function App() {
           x2: bounds.getEast(),
           y2: bounds.getSouth(),
         };
-        axios
-          .post("/gis/zcta", data)
-          .then((response) => setLayers(response.data.results));
+        setStatus("Loading zipcode areas...");
+        const response = await axios.post("/gis/zcta", data);
+        setLayers(response.data.results);
+        setStatus("");
       },
       click: () => {
         map.locate();

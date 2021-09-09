@@ -1,3 +1,4 @@
 raw/
+secrets/
+instance/
 pyrightconfig.json
-db.sqlite3

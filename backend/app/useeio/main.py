@@ -16,6 +16,16 @@ def dump(j):
 
 
 class Endpoint:
+    # https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6192422/
+    # Footnote 2
+    dqi_names = [
+        "Data Reliability",
+        "Temporal Correlation",
+        "Geographic Correlation",
+        "Technological Correlation",
+        "Data Collection Methods",
+    ]
+
     def __init__(self, base_url, api_key):
         self.base_url = base_url
         self.headers = {"x-api-key": api_key}

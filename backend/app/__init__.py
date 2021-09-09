@@ -26,6 +26,6 @@ def create_app(test_config=None):
 
     from . import gis
 
-    app.register_blueprint(gis.bp)
+    app.register_blueprint(gis.blueprint)
 
     return app

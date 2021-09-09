@@ -4,10 +4,10 @@ from werkzeug.exceptions import abort
 
 from app.db import get_db
 
-bp = Blueprint("gis", __name__, url_prefix="/gis")
+blueprint = Blueprint("gis", __name__, url_prefix="/gis")
 
 
-@bp.route("/zcta", methods=["POST"])
+@blueprint.route("/zcta", methods=["POST"])
 def zcta():
     db = get_db()
     json_data = request.get_json()

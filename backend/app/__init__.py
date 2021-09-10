@@ -24,8 +24,8 @@ def create_app(test_config=None):
     except OSError:
         pass
 
-    from . import gis
+    from . import query
 
-    app.register_blueprint(gis.blueprint)
+    app.register_blueprint(query.blueprint)
 
     return app

@@ -7,8 +7,8 @@ const center: LatLngExpression = [33.813534, -84.403339];
 const style = {
   fillColor: "green",
   weight: 2,
-  opacity: 0.5,
-  color: "#555",
+  opacity: 0.2,
+  color: "black",
   dashArray: "1",
   fillOpacity: 0.1,
 };
@@ -25,7 +25,7 @@ export default function App() {
       y2: bounds.getSouth(),
     };
     setStatus("Loading zipcode areas...");
-    const response = await axios.post("/gis/zcta", data);
+    const response = await axios.post("/query/zcta", data);
     setLayers(response.data.results);
     setStatus("");
   }
@@ -46,11 +46,11 @@ export default function App() {
   }
 
   return (
-    <div className="container mx-auto flex flex-col h-screen p-2">
+    <div className="container flex flex-col h-screen p-2 mx-auto">
       <MapContainer
         center={center}
         zoom={11}
-        className="w-full h-full flex-grow"
+        className="flex-grow w-full h-full rounded-t-lg"
         whenCreated={(map) => loadVisibleZCTA(map)}
       >
         <TileLayer
@@ -62,8 +62,8 @@ export default function App() {
           <GeoJSON key={zipcode} data={geometry} style={style} />
         ))}
       </MapContainer>
-      <div className="flex-grow-0 h10 bg-gray-500 p-1 h-9 text-white">
-        {status}
+      <div className="flex-grow-0 h10 bg-gray-500 p-1 pl-5 border-t-2 border-gray h-9 text-white rounded-b-sm font-mono font-extralight">
+        Activity:{status}
       </div>
     </div>
   );

@@ -1,5 +1,6 @@
 import app.gis.query
 import app.cbp.query
+import app.useeio.query
 from flask import Blueprint, request, current_app
 
 from app.db import get_db
@@ -31,3 +32,14 @@ def naics():
         }
 
     return app.cbp.query.get_naics_by_zipcode(buildQueryParams(request.get_json()))
+
+
+@blueprint.route("/useeio", methods=["POST"])
+def useeio():
+    def buildQueryParams(json_data):
+        return {
+            "base_url": current_app.config["USEEIO_BASE_URL"],
+            "api_key": current_app.config["USEEIO_API_KEY"],
+        }
+
+    return app.useeio.query.get_all_sectors(buildQueryParams(request.get_json()))

@@ -18,8 +18,6 @@ def bucket_by_zipcode(data):
 
 # https://api.census.gov/data/2019/cbp/variables.html
 def get_naics_by_zipcode(params):
-    # state = "13"  # https://www.census.gov/library/reference/code-lists/ansi.html#par_textimage_3
-
     data = requests.get(
         urljoin([params["base_url"], "2019", "cbp"]),
         params={

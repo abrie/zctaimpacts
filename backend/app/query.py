@@ -27,6 +27,7 @@ def zcta():
 def naics():
     def buildQueryParams(json_data):
         return {
+            "base_url": current_app.config["CENSUS_BASE_URL"],
             "api_key": current_app.config["CENSUS_API_KEY"],
             "zipcodes": json_data["zipcodes"],
         }
@@ -36,10 +37,10 @@ def naics():
 
 @blueprint.route("/useeio", methods=["POST"])
 def useeio():
-    def buildQueryParams(json_data):
+    def buildQueryParams():
         return {
             "base_url": current_app.config["USEEIO_BASE_URL"],
             "api_key": current_app.config["USEEIO_API_KEY"],
         }
 
-    return app.useeio.query.get_all_sectors(buildQueryParams(request.get_json()))
+    return app.useeio.query.get_all_sectors(buildQueryParams())

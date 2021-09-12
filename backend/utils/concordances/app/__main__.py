@@ -54,11 +54,20 @@ def BEA_NAICS2007(db):
         skiprows=[0, 1, 2, 3, 4, 5, 6],
         usecols="C,D,F",
     )
-    colnames = [colname for colname in df.columns]
-    df = df[df[colnames[0]].notna()]
-    df = df[df[colnames[2]].notna()]
-
     df.columns = ["BEA_CODE", "TITLE", "NAICS2007"]
+    df = df[df["BEA_CODE"].notna()]
+    df = df[df["NAICS2007"].notna()]
+
+    # In some cases there are mutiple comma-delimited NAICS codes,
+    # so we split them into seperate rows.
+    df = df.assign(NAICS2007=df["NAICS2007"].str.split(",")).explode("NAICS2007")
+
+    # Some of the NAICS codes have hyphens with an extra number. Not sure why; but they
+    # do not appear neccessary. Cut them out.
+    df = df.assign(NAICS2007=df["NAICS2007"].str.split("-").str[0])
+
+    # Ensure there is no extra whitespace.
+    df = df.assign(NAICS2007=df["NAICS2007"].str.strip())
 
     df.to_csv(
         os.path.join("out", "GDPbyInd_GO_NAICS_1997-2016.csv"),

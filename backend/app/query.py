@@ -1,8 +1,10 @@
 import app.gis.query
 import app.cbp.query
+import app.bea.query
 import app.useeio.query
 from flask import Blueprint, request, current_app
 
+from app.db import get_spatial_db
 from app.db import get_db
 
 blueprint = Blueprint("query", __name__, url_prefix="/query")
@@ -19,7 +21,7 @@ def zcta():
         }
 
     return app.gis.query.get_zctas_intersecting_mbr(
-        get_db(), buildQueryParams(request.get_json())
+        get_spatial_db(), buildQueryParams(request.get_json())
     )
 
 
@@ -33,6 +35,30 @@ def naics():
         }
 
     return app.cbp.query.get_naics_by_zipcode(buildQueryParams(request.get_json()))
+
+
+@blueprint.route("/bea/naics2007", methods=["POST"])
+def bea_naics2007():
+    def buildQueryparams(json_data):
+        return {"naics2007_code": json_data["naics2007_code"]}
+
+    results = app.bea.query.get_beacode_from_naics2007(
+        get_db(), buildQueryparams(request.get_json())
+    )
+
+    return {"results": results}
+
+
+@blueprint.route("/bea/naics2017", methods=["POST"])
+def bea_naics2017():
+    def buildQueryparams(json_data):
+        return {"naics2017_code": json_data["naics2017_code"]}
+
+    results = app.bea.query.get_beacode_from_naics2017(
+        get_db(), buildQueryparams(request.get_json())
+    )
+
+    return {"results": results}
 
 
 @blueprint.route("/useeio", methods=["POST"])

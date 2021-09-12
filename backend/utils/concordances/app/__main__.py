@@ -12,7 +12,12 @@ def NAICS2017_NAICS2012(db):
         index_col=None,
     )
 
-    df.columns = ["NAICS2017", "NAICS2017_TITLE", "NAICS2012", "NAICS2012_TITLE"]
+    df.columns = [
+        "NAICS2017_CODE",
+        "NAICS2017_TITLE",
+        "NAICS2012_CODE",
+        "NAICS2012_TITLE",
+    ]
 
     df.to_csv(
         os.path.join("out", "NAICS2017_NAICS2012.csv"),
@@ -33,14 +38,24 @@ def NAICS2007_NAICS2012(db):
         index_col=None,
     )
 
-    df.columns = ["NAICS2007", "NAICS2007_TITLE", "NAICS2012", "NAICS2012_TITLE"]
+    df.columns = [
+        "NAICS2007_CODE",
+        "NAICS2007_TITLE",
+        "NAICS2012_CODE",
+        "NAICS2012_TITLE",
+    ]
 
     df.to_csv(
         os.path.join("out", "NAICS2007_NAICS2012.csv"),
         sep="|",
         encoding="utf-8",
         index=False,
-        header=["NAICS2007", "NAICS2007_TITLE", "NAICS2012", "NAICS2012_TITLE"],
+        header=[
+            "NAICS2007_CODE",
+            "NAICS2007_TITLE",
+            "NAICS2012_CODE",
+            "NAICS2012_TITLE",
+        ],
     )
 
     df.to_sql("NAICS2007_NAICS2012", db, if_exists="replace", index=False)
@@ -54,20 +69,22 @@ def BEA_NAICS2007(db):
         skiprows=[0, 1, 2, 3, 4, 5, 6],
         usecols="C,D,F",
     )
-    df.columns = ["BEA_CODE", "TITLE", "NAICS2007"]
+    df.columns = ["BEA_CODE", "BEA_TITLE", "NAICS2007_CODE"]
     df = df[df["BEA_CODE"].notna()]
-    df = df[df["NAICS2007"].notna()]
+    df = df[df["NAICS2007_CODE"].notna()]
 
     # In some cases there are mutiple comma-delimited NAICS codes,
-    # so we split them into seperate rows.
-    df = df.assign(NAICS2007=df["NAICS2007"].str.split(",")).explode("NAICS2007")
+    # so we 'explode' them into seperate rows.
+    df = df.assign(NAICS2007_CODE=df["NAICS2007_CODE"].str.split(",")).explode(
+        "NAICS2007_CODE"
+    )
 
     # Some of the NAICS codes have hyphens with an extra number. Not sure why; but they
     # do not appear neccessary. Cut them out.
-    df = df.assign(NAICS2007=df["NAICS2007"].str.split("-").str[0])
+    df = df.assign(NAICS2007_CODE=df["NAICS2007_CODE"].str.split("-").str[0])
 
     # Ensure there is no extra whitespace.
-    df = df.assign(NAICS2007=df["NAICS2007"].str.strip())
+    df = df.assign(NAICS2007_CODE=df["NAICS2007_CODE"].str.strip())
 
     df.to_csv(
         os.path.join("out", "GDPbyInd_GO_NAICS_1997-2016.csv"),

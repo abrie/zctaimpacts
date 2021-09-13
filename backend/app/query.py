@@ -12,38 +12,54 @@ blueprint = Blueprint("query", __name__, url_prefix="/query")
 
 @blueprint.route("/zcta", methods=["POST"])
 def zcta():
-    def buildQueryParams(json_data):
-        return {
-            "x1": json_data["x1"],
-            "y1": json_data["y1"],
-            "x2": json_data["x2"],
-            "y2": json_data["y2"],
-        }
+    json_data = request.get_json()
+    mbr = {
+        "x1": json_data["x1"],
+        "y1": json_data["y1"],
+        "x2": json_data["x2"],
+        "y2": json_data["y2"],
+    }
 
     return app.gis.query.get_zctas_intersecting_mbr(
-        get_spatial_db(), buildQueryParams(request.get_json())
+        spatial_db=get_spatial_db(), mbr=mbr
     )
+
+
+@blueprint.route("/zipcode", methods=["POST"])
+def zipcode():
+    json_data = request.get_json()
+
+    codes = app.cbp.query.get_naics_by_zipcode(
+        base_url=current_app.config["CENSUS_BASE_URL"],
+        api_key=current_app.config["CENSUS_API_KEY"],
+        zipcode=json_data["zipcode"],
+    )
+
+    results = [
+        app.bea.query.get_beacode_from_naics2017(get_db(), naics2017_code=code)
+        for code in codes
+    ]
+
+    return {"results": results}
 
 
 @blueprint.route("/naics", methods=["POST"])
 def naics():
-    def buildQueryParams(json_data):
-        return {
-            "base_url": current_app.config["CENSUS_BASE_URL"],
-            "api_key": current_app.config["CENSUS_API_KEY"],
-            "zipcodes": json_data["zipcodes"],
-        }
-
-    return app.cbp.query.get_naics_by_zipcode(buildQueryParams(request.get_json()))
+    json_data = request.get_json()
+    results = app.cbp.query.get_naics_by_zipcode(
+        base_url=current_app.config["CENSUS_BASE_URL"],
+        api_key=current_app.config["CENSUS_API_KEY"],
+        zipcode=json_data["zipcode"],
+    )
+    return {"results": results}
 
 
 @blueprint.route("/bea/naics2007", methods=["POST"])
 def bea_naics2007():
-    def buildQueryparams(json_data):
-        return {"naics2007_code": json_data["naics2007_code"]}
+    json_data = request.get_json()
 
     results = app.bea.query.get_beacode_from_naics2007(
-        get_db(), buildQueryparams(request.get_json())
+        db=get_db(), naics2007_code=json_data["naics2007_code"]
     )
 
     return {"results": results}

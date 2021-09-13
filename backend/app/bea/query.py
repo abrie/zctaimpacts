@@ -3,8 +3,7 @@ from sklearn.metrics.pairwise import cosine_similarity
 import numpy as np
 
 
-def get_naics2017_concordance(db, params):
-    naics2017_code = params["naics2017_code"]
+def get_naics2017_concordance(db, naics2017_code):
     rows = db.execute(
         """
         SELECT
@@ -37,15 +36,16 @@ def get_naics2017_concordance(db, params):
     ]
 
     if len(results) > 1:
-        print("More than one hit.")
-        return None
-    else:
-        return results[0]
+        print("Warning: More than one hit for naics2017 code:", naics2017_code)
+
+    return results[0]
 
 
-def get_beacode_from_naics2017(db, params):
-    concordance = get_naics2017_concordance(db, params)
-    hits = get_beacode_from_naics2007(db, concordance)
+def get_beacode_from_naics2017(db, naics2017_code):
+    concordance = get_naics2017_concordance(db=db, naics2017_code=naics2017_code)
+    hits = get_beacode_from_naics2007(
+        db=db, naics2007_code=concordance["naics2007_code"]
+    )
 
     if len(hits) <= 1:
         return hits
@@ -55,19 +55,17 @@ def get_beacode_from_naics2017(db, params):
 
     tfidf_vectorizer = TfidfVectorizer()
     sparse_matrix = tfidf_vectorizer.fit_transform(string_list)
-    doc_term_matrix = sparse_matrix.toarray()
+    doc_term_matrix = sparse_matrix.toarray()  # type: ignore
 
-    tgt_transform = tfidf_vectorizer.transform([tgt_string]).toarray()
+    tgt_transform = tfidf_vectorizer.transform([tgt_string]).toarray()  # type: ignore
     tgt_cosine = cosine_similarity(doc_term_matrix, tgt_transform)
     idx = np.argmax(tgt_cosine)
-    print(idx)
 
     return hits[idx]
 
 
-def get_beacode_from_naics2007(db, params):
+def get_beacode_from_naics2007(db, naics2007_code):
     results = []
-    naics2007_code = params["naics2007_code"]
     while len(results) == 0 and len(naics2007_code) >= 2:
         rows = db.execute(
             """

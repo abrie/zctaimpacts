@@ -6,25 +6,21 @@ def urljoin(parts):
     return "/".join(part.strip("/") for part in parts)
 
 
-def bucket_by_zipcode(data):
-    result = defaultdict(list)
-
-    for i in data:
-        if len(i[0]) >= 6:  # Look for full length NAICS codes
-            result[i[1]].append(i[0])
-
-    return result
-
-
 # https://api.census.gov/data/2019/cbp/variables.html
-def get_naics_by_zipcode(params):
+def get_naics_by_zipcode(base_url, api_key, zipcode):
     data = requests.get(
-        urljoin([params["base_url"], "2019", "cbp"]),
+        urljoin([base_url, "2019", "cbp"]),
         params={
             "get": ",".join(["NAICS2017"]),
-            "for": f"zipcode:{params['zipcodes'][0]}",
-            "key": params["api_key"],
+            "for": f"zipcode:{zipcode}",
+            "key": api_key,
         },
     ).json()
 
-    return bucket_by_zipcode(data[1:])
+    results = []
+    for d in data:
+        code = d[0]
+        if len(code) == 6:
+            results.append(code)
+
+    return results

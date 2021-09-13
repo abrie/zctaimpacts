@@ -17,8 +17,8 @@ FROM
 """
 
 
-def get_zctas_intersecting_mbr(db, mbr):
-    rows = db.execute(sql, mbr).fetchall()
+def get_zctas_intersecting_mbr(spatial_db, mbr):
+    rows = spatial_db.execute(sql, mbr).fetchall()
 
     return {
         "results": [

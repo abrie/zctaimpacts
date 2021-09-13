@@ -11,7 +11,7 @@ def get_spatial_db():
         )
         g.spatial_db.row_factory = sqlite3.Row
 
-    return g.db
+    return g.spatial_db
 
 
 def get_db():

@@ -1,6 +1,7 @@
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 import numpy as np
+import pandas
 
 
 def get_naics2017_concordance(*, db, naics2017_code):
@@ -43,34 +44,31 @@ def get_naics2017_concordance(*, db, naics2017_code):
 
 def get_beacode_from_naics2017(*, db, naics2017_code):
     concordance = get_naics2017_concordance(db=db, naics2017_code=naics2017_code)
-    hits = get_beacode_from_naics2007(
-        db=db, naics2007_code=concordance["naics2007_code"]
-    )
+    df = get_beacode_from_naics2007(db=db, naics2007_code=concordance["naics2007_code"])
 
-    if len(hits) == 0:
+    if df.empty:
         title = concordance["naics2017_title"]
         return f"no hits for {naics2017_code} '{title}'"
-    if len(hits) == 1:
-        return hits[0]
 
     tgt_string = concordance["naics2007_title"]
-    string_list = [hit["bea_title"] for hit in hits]
 
     tfidf_vectorizer = TfidfVectorizer()
-    sparse_matrix = tfidf_vectorizer.fit_transform(string_list)
-    doc_term_matrix = sparse_matrix.toarray()  # type: ignore
 
-    tgt_transform = tfidf_vectorizer.transform([tgt_string]).toarray()  # type: ignore
-    tgt_cosine = cosine_similarity(doc_term_matrix, tgt_transform)
-    idx = np.argmax(tgt_cosine)
+    tgt_cosine = cosine_similarity(
+        tfidf_vectorizer.fit_transform(df["BEA_TITLE"]).toarray(),  # type: ignore
+        tfidf_vectorizer.transform([tgt_string]).toarray(),  # type: ignore
+    )
 
-    return hits[idx]
+    df["COSINE"] = tgt_cosine.flatten().tolist()
+
+    match = df.iloc[df["COSINE"].idxmax()]  # type: ignore
+    return match.to_dict()
 
 
 def get_beacode_from_naics2007(*, db, naics2007_code):
-    results = []
-    while len(results) == 0 and len(naics2007_code) >= 2:
-        rows = db.execute(
+    df = pandas.DataFrame()
+    while df.empty and len(naics2007_code) >= 2:
+        df = pandas.read_sql(
             """
             SELECT
                 BEA_CODE,
@@ -81,18 +79,10 @@ def get_beacode_from_naics2007(*, db, naics2007_code):
             WHERE
                 NAICS2007_CODE=:naics2007_code
             """,
-            {"naics2007_code": naics2007_code},
-        ).fetchall()
-
-        results = [
-            {
-                "bea_code": row["BEA_CODE"],
-                "bea_title": row["BEA_TITLE"],
-                "naics2007_code": row["NAICS2007_CODE"],
-            }
-            for row in rows
-        ]
+            db,
+            params={"naics2007_code": naics2007_code},
+        )
 
         naics2007_code = naics2007_code[:-1]
 
-    return results
+    return df

@@ -79,12 +79,22 @@ def BEA_NAICS2007(db):
         "NAICS2007_CODE"
     )
 
-    # Some of the NAICS codes have hyphens with an extra number. Not sure why; but they
-    # do not appear neccessary. Cut them out.
-    df = df.assign(NAICS2007_CODE=df["NAICS2007_CODE"].str.split("-").str[0])
-
     # Ensure there is no extra whitespace.
     df = df.assign(NAICS2007_CODE=df["NAICS2007_CODE"].str.strip())
+
+    # Some of the NAICS codes have hyphens with an extra number. This indicates a range,
+    # so we need to generate a list and explode into additional rows.
+    def range_to_list(x):
+        parts = x.split("-")
+        if len(parts) == 1:
+            return x
+        else:
+            a = int(parts[0])
+            b = int(parts[0][:-1] + parts[1])
+            return [str(n) for n in range(a, b + 1)]
+
+    df["NAICS2007_CODE"] = df["NAICS2007_CODE"].apply(range_to_list)
+    df = df.explode("NAICS2007_CODE")
 
     df.to_csv(
         os.path.join("out", "GDPbyInd_GO_NAICS_1997-2016.csv"),

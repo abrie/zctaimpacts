@@ -3,7 +3,7 @@ from sklearn.metrics.pairwise import cosine_similarity
 import numpy as np
 
 
-def get_naics2017_concordance(db, naics2017_code):
+def get_naics2017_concordance(*, db, naics2017_code):
     rows = db.execute(
         """
         SELECT
@@ -41,14 +41,17 @@ def get_naics2017_concordance(db, naics2017_code):
     return results[0]
 
 
-def get_beacode_from_naics2017(db, naics2017_code):
+def get_beacode_from_naics2017(*, db, naics2017_code):
     concordance = get_naics2017_concordance(db=db, naics2017_code=naics2017_code)
     hits = get_beacode_from_naics2007(
         db=db, naics2007_code=concordance["naics2007_code"]
     )
 
-    if len(hits) <= 1:
-        return hits
+    if len(hits) == 0:
+        title = concordance["naics2017_title"]
+        return f"no hits for {naics2017_code} '{title}'"
+    if len(hits) == 1:
+        return hits[0]
 
     tgt_string = concordance["naics2007_title"]
     string_list = [hit["bea_title"] for hit in hits]
@@ -64,7 +67,7 @@ def get_beacode_from_naics2017(db, naics2017_code):
     return hits[idx]
 
 
-def get_beacode_from_naics2007(db, naics2007_code):
+def get_beacode_from_naics2007(*, db, naics2007_code):
     results = []
     while len(results) == 0 and len(naics2007_code) >= 2:
         rows = db.execute(

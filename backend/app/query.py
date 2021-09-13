@@ -36,7 +36,7 @@ def zipcode():
     )
 
     results = [
-        app.bea.query.get_beacode_from_naics2017(get_db(), naics2017_code=code)
+        app.bea.query.get_beacode_from_naics2017(db=get_db(), naics2017_code=code)
         for code in codes
     ]
 

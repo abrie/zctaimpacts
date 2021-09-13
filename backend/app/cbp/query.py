@@ -7,7 +7,7 @@ def urljoin(parts):
 
 
 # https://api.census.gov/data/2019/cbp/variables.html
-def get_naics_by_zipcode(base_url, api_key, zipcode):
+def get_naics_by_zipcode(*, base_url, api_key, zipcode):
     data = requests.get(
         urljoin([base_url, "2019", "cbp"]),
         params={

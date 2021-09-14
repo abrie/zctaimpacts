@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { MapContainer, TileLayer, GeoJSON, useMapEvents } from "react-leaflet";
 import { LatLngExpression, Map } from "leaflet";
+import { RiCollageLine } from "react-icons/ri";
 import axios from "axios";
 
 const center: LatLngExpression = [33.813534, -84.403339];
@@ -24,10 +25,10 @@ export default function App() {
       x2: bounds.getEast(),
       y2: bounds.getSouth(),
     };
-    setStatus("Loading zipcode areas...");
+    setStatus("loading_zipcodes");
     const response = await axios.post("/query/zcta", data);
     setLayers(response.data.results);
-    setStatus("");
+    setStatus("idle");
   }
 
   function MapComponent() {
@@ -43,6 +44,28 @@ export default function App() {
       },
     });
     return null;
+  }
+
+  interface StatusProps {
+    status: string;
+  }
+
+  function Status({ status }: StatusProps): JSX.Element {
+    switch (status) {
+      case "loading_zipcodes":
+        return (
+          <>
+            <div>
+              <RiCollageLine className="h-full align-middle animate-ping text-white" />
+            </div>
+            <div className="ml-2 align-middle text-mono text-sm">
+              Mapping zipcodes
+            </div>
+          </>
+        );
+      default:
+        return <></>;
+    }
   }
 
   return (
@@ -62,8 +85,8 @@ export default function App() {
           <GeoJSON key={zipcode} data={geometry} style={style} />
         ))}
       </MapContainer>
-      <div className="flex-grow-0 h10 bg-gray-500 p-1 pl-5 border-t-2 border-gray h-9 text-white rounded-b-sm font-mono font-extralight">
-        Activity:{status}
+      <div className="flex flex-row flex-grow-0 h10 bg-gray-500 p-1 pl-5 border-t-2 border-gray h-9 text-white rounded-b-sm font-mono font-extralight">
+        <Status status={status} />
       </div>
     </div>
   );

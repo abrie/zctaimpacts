@@ -9,6 +9,7 @@ import app.useeio.query
 from app.db import get_spatial_db
 from app.db import get_db
 
+
 class InvalidAPIUsage(Exception):
     status_code = 400
 
@@ -96,7 +97,15 @@ def zipcode():
 
     jsonschema.validate(instance=json_data, schema=schema)
 
-    df = get_beacodes_by_zipcode(json_data["zipcode"])
+    df_1 = get_beacodes_by_zipcode(json_data["zipcode"])
+
+    df_2 = app.useeio.query.get_all_sectors(
+        base_url=current_app.config["USEEIO_BASE_URL"],
+        api_key=current_app.config["USEEIO_API_KEY"],
+    )
+
+    df = pandas.merge(left=df_1, right=df_2, left_on="BEA_CODE", right_on="code")
+    print(df)
     return {"results": df.to_dict("records")}
 
 
@@ -173,12 +182,11 @@ def bea_naics2017():
     return {"results": results}
 
 
-@blueprint.route("/useeio", methods=["POST"])
+@blueprint.route("/useeio/sectors", methods=["POST"])
 def useeio():
-    def buildQueryParams():
-        return {
-            "base_url": current_app.config["USEEIO_BASE_URL"],
-            "api_key": current_app.config["USEEIO_API_KEY"],
-        }
-
-    return app.useeio.query.get_all_sectors(buildQueryParams())
+    df = app.useeio.query.get_all_sectors(
+        base_url=current_app.config["USEEIO_BASE_URL"],
+        api_key=current_app.config["USEEIO_API_KEY"],
+    )
+    print(df)
+    return {"results": df.to_dict("records")}

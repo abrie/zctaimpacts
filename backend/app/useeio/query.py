@@ -1,4 +1,5 @@
 import json
+import pandas
 
 from .endpoint import Endpoint
 
@@ -7,10 +8,12 @@ def dump(j):
     print(json.dumps(j, indent=4, sort_keys=True))
 
 
-def get_all_sectors(params):
-    endpoint = Endpoint(params["base_url"], params["api_key"])
+def get_all_sectors(*, base_url, api_key):
+    endpoint = Endpoint(base_url, api_key)
     model = endpoint.get_models()[0]
-    return {"sectors": endpoint.get_sectors(model)}
+    sectors = endpoint.get_sectors(model)
+    df = pandas.DataFrame(sectors)
+    return df
 
 
 """

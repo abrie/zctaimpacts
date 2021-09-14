@@ -61,8 +61,7 @@ def get_beacode_from_naics2017(*, db, naics2017_code):
 
     df["COSINE"] = tgt_cosine.flatten().tolist()
 
-    match = df.iloc[df["COSINE"].idxmax()]  # type: ignore
-    return match.to_dict()
+    return df.iloc[df["COSINE"].idxmax()]  # type: ignore
 
 
 def get_beacode_from_naics2007(*, db, naics2007_code):

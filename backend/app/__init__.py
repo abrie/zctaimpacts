@@ -1,6 +1,10 @@
 import os
 
-from flask import Flask
+from flask import Flask, jsonify
+
+
+def invalid_api_usage(e):
+    return jsonify(e.to_dict())
 
 
 def create_app(test_config=None):
@@ -24,6 +28,8 @@ def create_app(test_config=None):
         os.makedirs(app.instance_path)
     except OSError:
         pass
+
+    app.register_error_handler(400, invalid_api_usage)
 
     from . import query
 

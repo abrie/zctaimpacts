@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { MapContainer, TileLayer, GeoJSON, useMapEvents } from "react-leaflet";
-import { LatLngExpression, Map } from "leaflet";
+import { LatLngExpression, LeafletEventHandlerFnMap, Map } from "leaflet";
 import { RiCollageLine } from "react-icons/ri";
 import axios from "axios";
 
@@ -13,6 +13,14 @@ const style = {
   dashArray: "1",
   fillOpacity: 0.1,
 };
+
+const highlightStyle = {
+  weight: 5,
+  color: "#666",
+  dashArray: "",
+  fillOpacity: 0.7,
+};
+
 export default function App() {
   const [layers, setLayers] = useState([]);
   const [status, setStatus] = useState("");
@@ -68,6 +76,15 @@ export default function App() {
     }
   }
 
+  const eventHandlers: LeafletEventHandlerFnMap = {
+    mouseover: (e: any) => {
+      e.layer.setStyle(highlightStyle);
+    },
+    mouseout: (e: any) => {
+      e.layer.setStyle(style);
+    },
+  };
+
   return (
     <div className="container flex flex-col h-screen p-2 mx-auto">
       <MapContainer
@@ -82,7 +99,12 @@ export default function App() {
         />
         <MapComponent />
         {layers.map(({ zipcode, geometry }) => (
-          <GeoJSON key={zipcode} data={geometry} style={style} />
+          <GeoJSON
+            key={zipcode}
+            data={geometry}
+            style={style}
+            eventHandlers={eventHandlers}
+          />
         ))}
       </MapContainer>
       <div className="flex flex-row flex-grow-0 h10 bg-gray-500 p-1 pl-5 border-t-2 border-gray h-9 text-white rounded-b-sm font-mono font-extralight">

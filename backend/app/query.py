@@ -1,3 +1,4 @@
+import pandas
 import app.gis.query
 import app.cbp.query
 import app.bea.query
@@ -25,22 +26,30 @@ def zcta():
     )
 
 
+def get_beacodes_by_zipcode(zipcode):
+    codes = app.cbp.query.get_naics_by_zipcode(
+        base_url=current_app.config["CENSUS_BASE_URL"],
+        api_key=current_app.config["CENSUS_API_KEY"],
+        zipcode=zipcode,
+    )
+
+    df = pandas.DataFrame(
+        [
+            app.bea.query.get_beacode_from_naics2017(db=get_db(), naics2017_code=code)
+            for code in codes
+        ]
+    )
+
+    df["COUNT"] = df.groupby(["BEA_CODE"])["BEA_CODE"].transform("size")
+    return df.drop_duplicates()
+
+
 @blueprint.route("/zipcode", methods=["POST"])
 def zipcode():
     json_data = request.get_json()
 
-    codes = app.cbp.query.get_naics_by_zipcode(
-        base_url=current_app.config["CENSUS_BASE_URL"],
-        api_key=current_app.config["CENSUS_API_KEY"],
-        zipcode=json_data["zipcode"],
-    )
-
-    results = [
-        app.bea.query.get_beacode_from_naics2017(db=get_db(), naics2017_code=code)
-        for code in codes
-    ]
-
-    return {"results": results}
+    df = get_beacodes_by_zipcode(json_data["zipcode"])
+    return {"results": df.to_dict("records")}
 
 
 @blueprint.route("/naics", methods=["POST"])

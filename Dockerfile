@@ -11,6 +11,6 @@ RUN \
   && apt-get install -y libsqlite3-mod-spatialite \
   && rm -rf /var/lib/apt/lists/*
 COPY --from=builder /install /usr/local
-COPY backend/ /backend
-WORKDIR backend
+COPY backend/app backend/app
+WORKDIR /backend
 CMD ["gunicorn", "--bind", "0.0.0.0:5000", "app:create_app()"]

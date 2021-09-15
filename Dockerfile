@@ -1,8 +1,9 @@
-FROM python:slim as builder
+FROM python:slim-buster as builder
 RUN mkdir /install
 WORKDIR /install
 COPY backend/requirements.txt /requirements.txt
-RUN pip install --prefix=/install -r /requirements.txt
+RUN pip install --no-cache-dir --prefix=/install -r /requirements.txt
+RUN find /install \( -type d -a -name test -o -name tests \) -o \( -type f -a -name '*.pyc' -o -name '*.pyo' \) -exec rm -rf '{}' \+
 # Here is the production image
 FROM python:slim as app
 RUN \

@@ -1,2 +1,2 @@
-run:
-	@python3 -m app run --secrets secrets/secrets.json
+container:
+	docker build -t sustainable .

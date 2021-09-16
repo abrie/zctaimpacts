@@ -1,4 +1,5 @@
 container:
+	cd frontend; yarn build
 	docker build -t zctaimpacts .
 push-container:
 	docker tag zctaimpacts abriedev/zctaimpacts:latest

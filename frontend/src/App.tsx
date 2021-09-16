@@ -1,6 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { MapContainer, TileLayer, GeoJSON, useMapEvents } from "react-leaflet";
-import { LatLngExpression, LeafletEventHandlerFnMap, Map } from "leaflet";
+import {
+  LatLngExpression,
+  LeafletEventHandlerFnMap,
+  LeafletMouseEvent,
+  Map,
+} from "leaflet";
 import { RiCollageLine } from "react-icons/ri";
 import axios from "axios";
 
@@ -40,6 +45,22 @@ const highlightStyle = {
 export default function App() {
   const [layers, setLayers] = useState([]);
   const [status, setStatus] = useState("");
+  const [loadedZip, setLoadedZip] = useState(undefined);
+
+  useEffect(() => {
+    (async () => {
+      if (!loadedZip) {
+        return;
+      }
+      const data = {
+        zipcode: loadedZip,
+      };
+      setStatus("loading_zipcode");
+      const response = await axios.post("/query/zipcode", data);
+      console.log(response.data.results);
+      setStatus("idle");
+    })();
+  }, [loadedZip]);
 
   async function loadVisibleZCTA(map: Map) {
     const bounds = map.getBounds();
@@ -83,7 +104,18 @@ export default function App() {
               <RiCollageLine className="h-full align-middle animate-ping text-white" />
             </div>
             <div className="ml-2 align-middle text-mono text-sm">
-              Mapping zipcodes
+              Computing visible zipcodes...
+            </div>
+          </>
+        );
+      case "loading_zipcode":
+        return (
+          <>
+            <div>
+              <RiCollageLine className="h-full align-middle animate-ping text-white" />
+            </div>
+            <div className="ml-2 align-middle text-mono text-sm">
+              Retrieving zipcode data...
             </div>
           </>
         );
@@ -93,17 +125,34 @@ export default function App() {
   }
 
   const eventHandlers: LeafletEventHandlerFnMap = {
-    mouseover: (e: any) => {
-      e.layer.setStyle(highlightStyle);
+    mouseover: (e: LeafletMouseEvent) => {
+      e.target.setStyle(highlightStyle);
     },
-    mouseout: (e: any) => {
-      e.layer.setStyle(style);
+    mouseout: (e: LeafletMouseEvent) => {
+      e.target.setStyle(style);
+    },
+    click: (e: LeafletMouseEvent) => {
+      setLoadedZip(e.propagatedFrom.feature.properties.zipcode);
     },
   };
+
+  function geometryToFeature(
+    zipcode: string,
+    geometry: GeoJSON.Geometry
+  ): GeoJSON.Feature {
+    return {
+      type: "Feature",
+      properties: {
+        zipcode,
+      },
+      geometry,
+    };
+  }
 
   return (
     <div className="container flex flex-col h-screen p-2 mx-auto">
       <MapContainer
+        tap={false}
         center={center}
         zoom={11}
         className="flex-grow w-full h-full rounded-t-lg"
@@ -117,7 +166,7 @@ export default function App() {
         {layers.map(({ zipcode, geometry }) => (
           <GeoJSON
             key={zipcode}
-            data={geometry}
+            data={geometryToFeature(zipcode, geometry)}
             style={style}
             eventHandlers={eventHandlers}
           />

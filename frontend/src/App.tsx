@@ -29,8 +29,8 @@ const center: LatLngExpression = [33.813534, -84.403339];
 const style = {
   fillColor: "green",
   weight: 1,
-  opacity: 0.1,
-  color: "red",
+  opacity: 0.15,
+  color: "blue",
   dashArray: "1",
   fillOpacity: 0,
 };

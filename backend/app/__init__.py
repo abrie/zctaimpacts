@@ -1,6 +1,6 @@
 import os
 
-from flask import Flask, jsonify
+from flask import Flask, jsonify, send_from_directory
 
 
 def invalid_api_usage(e):
@@ -12,7 +12,7 @@ def create_app(test_config=None):
     app = Flask(
         __name__,
         instance_relative_config=True,
-        static_url_path="",
+        static_url_path="/",
         static_folder="static",
     )
     app.config.from_mapping(
@@ -35,6 +35,10 @@ def create_app(test_config=None):
         pass
 
     app.register_error_handler(400, invalid_api_usage)
+
+    @app.route("/")
+    def serve_index():
+        return send_from_directory(app.static_folder, "index.html")
 
     from . import query
 

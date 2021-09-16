@@ -68,7 +68,7 @@ def get_beacodes_by_zipcode(zipcode) -> pandas.DataFrame:
     )
 
     df["COUNT"] = df.groupby(["BEA_CODE"])["BEA_CODE"].transform("size")
-    df.drop_duplicates(inplace=True)
+    df.drop_duplicates("BEA_CODE",inplace=True)
     return df
 
 

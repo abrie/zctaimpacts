@@ -12,5 +12,6 @@ RUN \
   && rm -rf /var/lib/apt/lists/*
 COPY --from=builder /install /usr/local
 COPY backend/app backend/app
+COPY frontend/build backend/app/static
 WORKDIR /backend
-CMD ["gunicorn", "--bind", "0.0.0.0:5000", "app:create_app()"]
+CMD ["gunicorn", "--bind", "0.0.0.0:80", "app:create_app()"]

@@ -34,7 +34,7 @@ export default function App() {
       y2: bounds.getSouth(),
     };
     setStatus("loading_zipcodes");
-    const response = await axios.post("/query/zcta", data);
+    const response = await axios.post("/query/zcta/mbr", data);
     setLayers(response.data.results);
     setStatus("idle");
   }

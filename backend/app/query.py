@@ -29,10 +29,10 @@ class InvalidAPIUsage(Exception):
 blueprint = Blueprint("query", __name__, url_prefix="/query")
 
 
-@blueprint.route("/zcta", methods=["POST"])
+@blueprint.route("/zcta/mbr", methods=["POST"])
 def zcta():
-    json_data = request.get_json()
-    if json_data is None:
+    mbr = request.get_json()
+    if mbr is None:
         raise InvalidAPIUsage("No JSON body found.")
 
     schema = {
@@ -42,19 +42,11 @@ def zcta():
             "y1": {"type": "number"},
             "x2": {"type": "number"},
             "y2": {"type": "number"},
-            "name": {"type": "string"},
         },
         "required": ["x1", "y1", "x2", "y2"],
     }
 
-    jsonschema.validate(instance=json_data, schema=schema)
-
-    mbr = {
-        "x1": json_data["x1"],
-        "y1": json_data["y1"],
-        "x2": json_data["x2"],
-        "y2": json_data["y2"],
-    }
+    jsonschema.validate(instance=mbr, schema=schema)
 
     return app.gis.query.get_zctas_intersecting_mbr(
         spatial_db=get_spatial_db(), mbr=mbr

@@ -52,10 +52,10 @@ jobs:
       run: |
         pytest
     - name: Upload backend artifact
-        uses: actions/upload-artifact@v2
-        with:
-          name: backend
-          path: app
+      uses: actions/upload-artifact@v2
+      with:
+        name: backend
+        path: app
 
   container:
     runs-on: ubuntu-latest

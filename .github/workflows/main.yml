@@ -57,6 +57,7 @@ jobs:
         path: app
 
   container:
+    needs: [frontend, backend]
     runs-on: ubuntu-latest
     env:
       IMAGE_NAME: abriedev/zctaimpacts:latest

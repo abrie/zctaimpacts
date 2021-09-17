@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { CSSTransition } from "react-transition-group";
 import { MapContainer, TileLayer, GeoJSON, useMapEvents } from "react-leaflet";
 import {
   LatLngExpression,
@@ -45,6 +46,7 @@ const highlightStyle = {
 export default function App() {
   const [layers, setLayers] = useState([]);
   const [status, setStatus] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   const [loadedZip, setLoadedZip] = useState(undefined);
 
   useEffect(() => {
@@ -71,8 +73,10 @@ export default function App() {
       y2: bounds.getSouth(),
     };
     setStatus("loading_zipcodes");
+    setIsLoading(true);
     const response = await axios.post("/query/zcta/mbr", data);
     setLayers(response.data.results);
+    setIsLoading(false);
     setStatus("idle");
   }
 
@@ -89,39 +93,6 @@ export default function App() {
       },
     });
     return null;
-  }
-
-  interface StatusProps {
-    status: string;
-  }
-
-  function Status({ status }: StatusProps): JSX.Element {
-    switch (status) {
-      case "loading_zipcodes":
-        return (
-          <>
-            <div>
-              <RiCollageLine className="h-full align-middle animate-ping text-white" />
-            </div>
-            <div className="ml-2 align-middle text-mono text-sm">
-              Computing visible zipcodes...
-            </div>
-          </>
-        );
-      case "loading_zipcode":
-        return (
-          <>
-            <div>
-              <RiCollageLine className="h-full align-middle animate-ping text-white" />
-            </div>
-            <div className="ml-2 align-middle text-mono text-sm">
-              Retrieving zipcode data...
-            </div>
-          </>
-        );
-      default:
-        return <></>;
-    }
   }
 
   const eventHandlers: LeafletEventHandlerFnMap = {
@@ -172,8 +143,22 @@ export default function App() {
           />
         ))}
       </MapContainer>
-      <div className="flex flex-row flex-grow-0 h10 bg-gray-500 p-1 pl-5 border-t-2 border-gray h-9 text-white rounded-b-sm font-mono font-extralight">
-        <Status status={status} />
+      <div className="flex flex-grow-0 h10 bg-gray-400 flex-col justify-center align-middle p-1 pl-5 border-t-2 border-gray h-9 text-white rounded-b-sm font-mono font-extralight">
+        <div className="w-full">
+          <div className="overflow-hidden h-full mb-1 text-xs flex rounded bg-blue-200 border-1 border-white ">
+            <CSSTransition
+              in={isLoading}
+              timeout={10000}
+              classNames={{
+                enter: "w-0",
+                enterActive: "w-full duration-long",
+                exit: "duration-75 w-0",
+              }}
+            >
+              <div className="transition-all ease-linear shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-blue-500"></div>
+            </CSSTransition>
+          </div>
+        </div>
       </div>
     </div>
   );

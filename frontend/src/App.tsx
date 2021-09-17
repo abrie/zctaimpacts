@@ -7,7 +7,6 @@ import {
   LeafletMouseEvent,
   Map,
 } from "leaflet";
-import { RiCollageLine } from "react-icons/ri";
 import axios from "axios";
 
 const providers = [
@@ -45,8 +44,7 @@ const highlightStyle = {
 
 export default function App() {
   const [layers, setLayers] = useState([]);
-  const [status, setStatus] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
+  const [showProgress, setShowProgress] = useState(false);
   const [loadedZip, setLoadedZip] = useState(undefined);
 
   useEffect(() => {
@@ -57,10 +55,8 @@ export default function App() {
       const data = {
         zipcode: loadedZip,
       };
-      setStatus("loading_zipcode");
       const response = await axios.post("/query/zipcode", data);
       console.log(response.data.results);
-      setStatus("idle");
     })();
   }, [loadedZip]);
 
@@ -72,12 +68,10 @@ export default function App() {
       x2: bounds.getEast(),
       y2: bounds.getSouth(),
     };
-    setStatus("loading_zipcodes");
-    setIsLoading(true);
+    setShowProgress(true);
     const response = await axios.post("/query/zcta/mbr", data);
     setLayers(response.data.results);
-    setIsLoading(false);
-    setStatus("idle");
+    setShowProgress(false);
   }
 
   function MapComponent() {
@@ -146,7 +140,7 @@ export default function App() {
       <div className="flex flex-grow-0 h10 bg-gray-400 flex-col justify-top border-t border-gray h-9 text-white rounded-b-sm font-mono font-extralight">
         <div className="overflow-hidden h-2 flex bg-white border-b border-t border-white">
           <CSSTransition
-            in={isLoading}
+            in={showProgress}
             timeout={999999}
             classNames={{
               enter: "w-0",

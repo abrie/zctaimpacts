@@ -143,21 +143,18 @@ export default function App() {
           />
         ))}
       </MapContainer>
-      <div className="flex flex-grow-0 h10 bg-gray-400 flex-col justify-center align-middle p-1 pl-5 border-t-2 border-gray h-9 text-white rounded-b-sm font-mono font-extralight">
-        <div className="w-full">
-          <div className="overflow-hidden h-full mb-1 text-xs flex rounded bg-blue-200 border-1 border-white ">
-            <CSSTransition
-              in={isLoading}
-              timeout={10000}
-              classNames={{
-                enter: "w-0",
-                enterActive: "w-full duration-long",
-                exit: "duration-75 w-0",
-              }}
-            >
-              <div className="transition-all ease-linear shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-blue-500"></div>
-            </CSSTransition>
-          </div>
+      <div className="flex flex-grow-0 h10 bg-gray-400 flex-col justify-top border-t border-gray h-9 text-white rounded-b-sm font-mono font-extralight">
+        <div className="overflow-hidden h-2 flex bg-white border-b border-t border-white">
+          <CSSTransition
+            in={isLoading}
+            timeout={999999}
+            classNames={{
+              enter: "w-0",
+              enterActive: "w-full duration-long",
+            }}
+          >
+            <div className="transition-all ease-linear shadow-none bg-yellow-500"></div>
+          </CSSTransition>
         </div>
       </div>
     </div>

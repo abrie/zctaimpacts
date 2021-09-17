@@ -7,9 +7,11 @@ on:
 
 jobs:
   frontend:
+    defaults:
+      run:
+        working-directory: frontend
+
     runs-on: ubuntu-latest
-    env:
-      working-directory: ./frontend
 
     steps:
     - uses: actions/checkout@v2
@@ -26,9 +28,10 @@ jobs:
         path: build
 
   backend:
+    defaults:
+      run:
+        working-directory: backend
     runs-on: ubuntu-latest
-    env:
-      working-directory: ./backend
 
     steps:
     - uses: actions/checkout@v2

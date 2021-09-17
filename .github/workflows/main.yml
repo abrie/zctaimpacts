@@ -16,7 +16,7 @@ jobs:
     - name: Set up
       run: yarn
     - name: Test
-      run: yarn test
+      run: CI=true yarn test
     - name: Build
       run: yarn build
     - name: Upload frontend artifact

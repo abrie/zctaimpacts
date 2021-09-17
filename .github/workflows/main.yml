@@ -13,7 +13,7 @@ jobs:
 
     runs-on: ubuntu-latest
     env:
-      REACT_APP_CI_RUN_NUMBER: $GITHUB_RUN_NUMBER
+      REACT_APP_CI_RUN_NUMBER: ${{ github.run_number }}
     steps:
     - uses: actions/checkout@v2
     - name: Set up

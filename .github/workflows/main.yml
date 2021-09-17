@@ -1,4 +1,4 @@
-name: ZCTAImpacts
+name: Build ZCTAImpacts
 
 on:
   push:

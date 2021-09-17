@@ -12,7 +12,8 @@ jobs:
         working-directory: frontend
 
     runs-on: ubuntu-latest
-
+    env:
+      REACT_APP_CI_RUN_NUMBER: $GITHUB_RUN_NUMBER
     steps:
     - uses: actions/checkout@v2
     - name: Set up

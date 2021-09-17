@@ -1,4 +1,4 @@
-name: Python application
+name: ZCTAImpacts
 
 on:
   push:
@@ -21,10 +21,10 @@ jobs:
     - name: Build
       run: yarn build
     - name: Upload frontend artifact
-        uses: actions/upload-artifact@v2
-        with:
-          name: frontend
-          path: build
+      uses: actions/upload-artifact@v2
+      with:
+        name: frontend
+        path: build
 
   backend:
     runs-on: ubuntu-latest

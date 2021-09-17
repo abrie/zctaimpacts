@@ -6,6 +6,8 @@ RUN pip install --no-cache-dir --prefix=/install -r /requirements.txt
 RUN find /install \( -type d -a -name test -o -name tests \) -o \( -type f -a -name '*.pyc' -o -name '*.pyo' \) -exec rm -rf '{}' \+
 
 FROM python:slim-buster as app
+ARG GITHUB_RUN_NUMBER "n/a"
+ENV REACT_APP_CI_RUN_NUMBER $GITHUB_RUN_NUMBER
 RUN \
   apt-get update \
   && apt-get install -y libsqlite3-mod-spatialite \

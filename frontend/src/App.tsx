@@ -150,6 +150,9 @@ export default function App() {
             <div className="transition-all ease-linear shadow-none bg-yellow-500"></div>
           </CSSTransition>
         </div>
+        <div className="flex w-full text-xs self-center">
+          build #{process.env.REACT_APP_CI_RUN_NUMBER}
+        </div>
       </div>
     </div>
   );

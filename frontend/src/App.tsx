@@ -8,7 +8,9 @@ import {
   Map,
 } from "leaflet";
 import axios from "axios";
+import { debounce } from "underscore";
 
+const DEBOUNCE_TIME_MSEC = 1000;
 const providers = [
   {
     url: "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png",
@@ -26,6 +28,7 @@ const providers = [
 const activeProvider = 0;
 
 const center: LatLngExpression = [33.813534, -84.403339];
+
 const style = {
   fillColor: "green",
   weight: 1,
@@ -42,6 +45,27 @@ const highlightStyle = {
   fillOpacity: 0.5,
 };
 
+interface ProgressBarParams {
+  active: boolean;
+}
+
+function ProgressBar({ active }: ProgressBarParams): JSX.Element {
+  return (
+    <div className="overflow-hidden h-2 flex bg-white border-b border-t border-white">
+      <CSSTransition
+        in={active}
+        timeout={999999}
+        classNames={{
+          enter: "w-0",
+          enterActive: "w-full duration-long",
+        }}
+      >
+        <div className="transition-all ease-linear shadow-none bg-yellow-500"></div>
+      </CSSTransition>
+    </div>
+  );
+}
+
 export default function App() {
   const [layers, setLayers] = useState([]);
   const [showProgress, setShowProgress] = useState(false);
@@ -56,7 +80,6 @@ export default function App() {
         zipcode: loadedZip,
       };
       const response = await axios.post("/query/zipcode", data);
-      console.log(response.data.results);
     })();
   }, [loadedZip]);
 
@@ -76,15 +99,15 @@ export default function App() {
 
   function MapComponent() {
     const map = useMapEvents({
-      resize: () => {
+      resize: debounce(() => {
         loadVisibleZCTA(map);
-      },
-      zoomend: () => {
+      }, DEBOUNCE_TIME_MSEC),
+      zoomend: debounce(() => {
         loadVisibleZCTA(map);
-      },
-      dragend: () => {
+      }, DEBOUNCE_TIME_MSEC),
+      dragend: debounce(() => {
         loadVisibleZCTA(map);
-      },
+      }, DEBOUNCE_TIME_MSEC),
     });
     return null;
   }
@@ -137,21 +160,15 @@ export default function App() {
           />
         ))}
       </MapContainer>
-      <div className="flex flex-grow-0 h10 bg-gray-400 flex-col justify-top border-t border-gray h-9 text-white rounded-b-sm font-mono font-extralight">
-        <div className="overflow-hidden h-2 flex bg-white border-b border-t border-white">
-          <CSSTransition
-            in={showProgress}
-            timeout={999999}
-            classNames={{
-              enter: "w-0",
-              enterActive: "w-full duration-long",
-            }}
-          >
-            <div className="transition-all ease-linear shadow-none bg-yellow-500"></div>
-          </CSSTransition>
-        </div>
-        <div className="flex w-full text-xs self-center">
-          build #{process.env.REACT_APP_CI_RUN_NUMBER}
+      <div className="flex flex-grow-0 h10 bg-gray-400 flex-col border-t-2 border-gray rounded-b-sm">
+        <ProgressBar active={showProgress} />
+        <div className="flex flex-row justify-between pl-1 w-full self-center">
+          <div className="text-white font-normal font-sans text-xs">
+            ZCTA Impacts
+          </div>
+          <div className="font-thin font-mono text-xs">
+            [build#{process.env.REACT_APP_CI_RUN_NUMBER}]
+          </div>
         </div>
       </div>
     </div>

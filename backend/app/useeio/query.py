@@ -2,6 +2,7 @@ import json
 import pandas
 
 from .endpoint import Endpoint
+from .matrices import get_matrices
 
 
 def dump(j):
@@ -14,6 +15,10 @@ def get_all_sectors(*, base_url, api_key):
     sectors = endpoint.get_sectors(model)
     df = pandas.DataFrame(sectors)
     return df
+
+
+def get_matricies():
+    print(get_matrices())
 
 
 """

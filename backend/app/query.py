@@ -68,8 +68,25 @@ def get_beacodes_by_zipcode(zipcode) -> pandas.DataFrame:
     )
 
     df["COUNT"] = df.groupby(["BEA_CODE"])["BEA_CODE"].transform("size")
-    df.drop_duplicates("BEA_CODE",inplace=True)
+    df.drop_duplicates("BEA_CODE", inplace=True)
     return df
+
+
+@blueprint.route("/useeio/matrices", methods=["POST"])
+def matrices():
+    json_data = request.get_json()
+    if json_data is None:
+        raise InvalidAPIUsage("No JSON body found.")
+    schema = {
+        "type": "object",
+        "properties": {},
+        "required": [],
+    }
+
+    jsonschema.validate(instance=json_data, schema=schema)
+
+    dfs = app.useeio.query.get_matrices()
+    return {}
 
 
 @blueprint.route("/zipcode", methods=["POST"])

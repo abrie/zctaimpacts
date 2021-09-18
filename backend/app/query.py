@@ -53,11 +53,54 @@ def zcta():
     )
 
 
+@blueprint.route("/county/mbr", methods=["POST"])
+def county():
+    mbr = request.get_json()
+    if mbr is None:
+        raise InvalidAPIUsage("No JSON body found.")
+
+    schema = {
+        "type": "object",
+        "properties": {
+            "x1": {"type": "number"},
+            "y1": {"type": "number"},
+            "x2": {"type": "number"},
+            "y2": {"type": "number"},
+        },
+        "required": ["x1", "y1", "x2", "y2"],
+    }
+
+    jsonschema.validate(instance=mbr, schema=schema)
+
+    return app.gis.query.get_counties_intersecting_mbr(
+        spatial_db=get_spatial_db(), mbr=mbr
+    )
+
+
 def get_beacodes_by_zipcode(zipcode) -> pandas.DataFrame:
     codes = app.cbp.query.get_naics_by_zipcode(
         base_url=current_app.config["CENSUS_BASE_URL"],
         api_key=current_app.config["CENSUS_API_KEY"],
         zipcode=zipcode,
+    )
+
+    df = pandas.DataFrame(
+        [
+            app.bea.query.get_beacode_from_naics2017(db=get_db(), naics2017_code=code)
+            for code in codes
+        ]
+    )
+
+    df["COUNT"] = df.groupby(["BEA_CODE"])["BEA_CODE"].transform("size")
+    df.drop_duplicates("BEA_CODE", inplace=True)
+    return df
+
+def get_beacodes_by_county(statefp,countyfp) -> pandas.DataFrame:
+    codes = app.cbp.query.get_naics_by_county(
+        base_url=current_app.config["CENSUS_BASE_URL"],
+        api_key=current_app.config["CENSUS_API_KEY"],
+        statefp=statefp,
+        countyfp=countyfp
     )
 
     df = pandas.DataFrame(
@@ -114,8 +157,9 @@ def zipcode():
     )
 
     df = pandas.merge(left=df_1, right=df_2, left_on="BEA_CODE", right_on="code")
-    print(df)
-    return {"results": df.to_dict("records")}
+    matrices = app.useeio.query.get_matrices()
+    filtered = matrices["D"].filter(items=df["id"], axis="columns")
+    return {"results": filtered.to_dict("records")}
 
 
 @blueprint.route("/naics", methods=["POST"])
@@ -197,5 +241,4 @@ def useeio():
         base_url=current_app.config["USEEIO_BASE_URL"],
         api_key=current_app.config["USEEIO_API_KEY"],
     )
-    print(df)
     return {"results": df.to_dict("records")}

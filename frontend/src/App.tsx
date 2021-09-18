@@ -97,16 +97,30 @@ export default function App() {
     setShowProgress(false);
   }
 
+  async function loadVisibleCounties(map: Map) {
+    const bounds = map.getBounds();
+    const data = {
+      x1: bounds.getWest(),
+      y1: bounds.getNorth(),
+      x2: bounds.getEast(),
+      y2: bounds.getSouth(),
+    };
+    setShowProgress(true);
+    const response = await axios.post("/query/county/mbr", data);
+    setLayers(response.data.results);
+    setShowProgress(false);
+  }
+
   function MapComponent() {
     const map = useMapEvents({
       resize: debounce(() => {
-        loadVisibleZCTA(map);
+        loadVisibleCounties(map);
       }, DEBOUNCE_TIME_MSEC),
       zoomend: debounce(() => {
-        loadVisibleZCTA(map);
+        loadVisibleCounties(map);
       }, DEBOUNCE_TIME_MSEC),
       dragend: debounce(() => {
-        loadVisibleZCTA(map);
+        loadVisibleCounties(map);
       }, DEBOUNCE_TIME_MSEC),
     });
     return null;
@@ -125,13 +139,15 @@ export default function App() {
   };
 
   function geometryToFeature(
-    zipcode: string,
+    statefp: string,
+    countyfp: string,
     geometry: GeoJSON.Geometry
   ): GeoJSON.Feature {
     return {
       type: "Feature",
       properties: {
-        zipcode,
+        statefp,
+        countyfp,
       },
       geometry,
     };
@@ -144,17 +160,17 @@ export default function App() {
         center={center}
         zoom={11}
         className="flex-grow w-full h-full rounded-t-lg"
-        whenCreated={(map) => loadVisibleZCTA(map)}
+        whenCreated={(map) => loadVisibleCounties(map)}
       >
         <TileLayer
           url={providers[activeProvider].url}
           attribution={providers[activeProvider].attribution}
         />
         <MapComponent />
-        {layers.map(({ zipcode, geometry }) => (
+        {layers.map(({ statefp, countyfp, geometry }, idx) => (
           <GeoJSON
-            key={zipcode}
-            data={geometryToFeature(zipcode, geometry)}
+            key={idx}
+            data={geometryToFeature(statefp, countyfp, geometry)}
             style={style}
             eventHandlers={eventHandlers}
           />

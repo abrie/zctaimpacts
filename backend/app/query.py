@@ -108,12 +108,27 @@ def get_industries_by_county(*, statefp,countyfp) -> pandas.DataFrame:
             db=get_db(),
             naics2017_code=row["NAICS2017_CODE"]), axis=1)
 
+    industries["REVENUE"] = industries.apply(
+        lambda row: row["EMP"] * 1e5, axis=1)
+
     sectors = app.useeio.query.get_all_sectors(
         base_url=current_app.config["USEEIO_BASE_URL"],
         api_key=current_app.config["USEEIO_API_KEY"],
     )
 
-    industries = pandas.merge(left=industries, right=sectors, left_on="BEA_CODE", right_on="code")
+    industries = industries.merge(right=sectors, left_on="BEA_CODE", right_on="code")
+
+    industries['TOTAL_PAYROLL'] = industries.groupby(['id'])['PAYANN'].transform('sum')
+    industries['TOTAL_REVENUE'] = industries.groupby(['id'])['REVENUE'].transform('sum')
+    industries['TOTAL_EMPLOYEES'] = industries.groupby(['id'])['EMP'].transform('sum')
+    industries['TOTAL_ESTABLISHMENTS'] = industries.groupby(['id'])['id'].transform('count')
+    industries = industries.drop(columns=["NAICS2017_CODE","PAYANN","EMP","REVENUE", "code","location","index","description"])
+    if industries is None:
+        raise AssertionError("Unexpectedly removed all columns!")
+    industries = industries.drop_duplicates()
+    if industries is None:
+        raise AssertionError("Unexpectedly dropped everything as duplicates.")
+    print(industries.columns)
 
     return industries
 

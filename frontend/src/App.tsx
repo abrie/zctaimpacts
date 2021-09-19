@@ -115,6 +115,7 @@ export default function App() {
         setShowProgress(true);
         setErrorMessage(undefined);
         const response = await axios.post("/query/county", data);
+        setShowProgress(false);
         console.log(response.data);
       } catch (e: unknown) {
         setShowProgress(false);

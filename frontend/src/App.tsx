@@ -49,9 +49,35 @@ interface ProgressBarParams {
   active: boolean;
 }
 
+interface County {
+  statefp: string;
+  countyfp: string;
+  geoid: string;
+  geometry: GeoJSON.Polygon;
+}
+
+interface QueryCountyResponse {
+  results: County[];
+}
+
+function countyToFeature({
+  statefp,
+  countyfp,
+  geometry,
+}: County): GeoJSON.Feature {
+  return {
+    type: "Feature",
+    properties: {
+      statefp,
+      countyfp,
+    },
+    geometry,
+  };
+}
+
 function ProgressBar({ active }: ProgressBarParams): JSX.Element {
   return (
-    <div className="overflow-hidden h-2 flex bg-white border-b border-t border-white">
+    <div className="flex h-2 overflow-hidden bg-white border-t border-b border-white">
       <CSSTransition
         in={active}
         timeout={999999}
@@ -60,42 +86,42 @@ function ProgressBar({ active }: ProgressBarParams): JSX.Element {
           enterActive: "w-full duration-long",
         }}
       >
-        <div className="transition-all ease-linear shadow-none bg-yellow-500"></div>
+        <div className="bg-yellow-500 shadow-none transition-all ease-linear"></div>
       </CSSTransition>
     </div>
   );
 }
 
 export default function App() {
-  const [layers, setLayers] = useState([]);
-  const [showProgress, setShowProgress] = useState(false);
-  const [loadedZip, setLoadedZip] = useState(undefined);
+  const [layers, setLayers] = useState<County[]>([]);
+  const [showProgress, setShowProgress] = useState<boolean>(false);
+  const [loadedCounty, setLoadedCounty] = useState<
+    { statefp: string; countyfp: string } | undefined
+  >(undefined);
+  const [errorMessage, setErrorMessage] = useState<string | undefined>(
+    undefined
+  );
 
   useEffect(() => {
     (async () => {
-      if (!loadedZip) {
+      if (!loadedCounty) {
         return;
       }
       const data = {
-        zipcode: loadedZip,
+        statefp: loadedCounty.statefp,
+        countyfp: loadedCounty.countyfp,
       };
-      const response = await axios.post("/query/zipcode", data);
+      try {
+        setShowProgress(true);
+        setErrorMessage(undefined);
+        const response = await axios.post("/query/county", data);
+        console.log(response.data);
+      } catch (e: unknown) {
+        setShowProgress(false);
+        setErrorMessage(`${e}`);
+      }
     })();
-  }, [loadedZip]);
-
-  async function loadVisibleZCTA(map: Map) {
-    const bounds = map.getBounds();
-    const data = {
-      x1: bounds.getWest(),
-      y1: bounds.getNorth(),
-      x2: bounds.getEast(),
-      y2: bounds.getSouth(),
-    };
-    setShowProgress(true);
-    const response = await axios.post("/query/zcta/mbr", data);
-    setLayers(response.data.results);
-    setShowProgress(false);
-  }
+  }, [loadedCounty]);
 
   async function loadVisibleCounties(map: Map) {
     const bounds = map.getBounds();
@@ -106,9 +132,18 @@ export default function App() {
       y2: bounds.getSouth(),
     };
     setShowProgress(true);
-    const response = await axios.post("/query/county/mbr", data);
-    setLayers(response.data.results);
-    setShowProgress(false);
+    setErrorMessage(undefined);
+    try {
+      const response = await axios.post<QueryCountyResponse>(
+        "/query/county/mbr",
+        data
+      );
+      setShowProgress(false);
+      setLayers(response.data.results);
+    } catch (e: unknown) {
+      setShowProgress(false);
+      setErrorMessage(`${e}`);
+    }
   }
 
   function MapComponent() {
@@ -134,24 +169,10 @@ export default function App() {
       e.target.setStyle(style);
     },
     click: (e: LeafletMouseEvent) => {
-      setLoadedZip(e.propagatedFrom.feature.properties.zipcode);
+      const { statefp, countyfp } = e.propagatedFrom.feature.properties;
+      setLoadedCounty({ statefp, countyfp });
     },
   };
-
-  function geometryToFeature(
-    statefp: string,
-    countyfp: string,
-    geometry: GeoJSON.Geometry
-  ): GeoJSON.Feature {
-    return {
-      type: "Feature",
-      properties: {
-        statefp,
-        countyfp,
-      },
-      geometry,
-    };
-  }
 
   return (
     <div className="container flex flex-col h-screen p-2 mx-auto">
@@ -167,10 +188,10 @@ export default function App() {
           attribution={providers[activeProvider].attribution}
         />
         <MapComponent />
-        {layers.map(({ statefp, countyfp, geometry }, idx) => (
+        {layers.map((county: County) => (
           <GeoJSON
-            key={idx}
-            data={geometryToFeature(statefp, countyfp, geometry)}
+            key={county.geoid}
+            data={countyToFeature(county)}
             style={style}
             eventHandlers={eventHandlers}
           />
@@ -178,11 +199,12 @@ export default function App() {
       </MapContainer>
       <div className="flex flex-grow-0 h10 bg-gray-400 flex-col border-t-2 border-gray rounded-b-sm">
         <ProgressBar active={showProgress} />
-        <div className="flex flex-row justify-between pl-1 w-full self-center">
-          <div className="text-white font-normal font-sans text-xs">
-            ZCTA Impacts
-          </div>
-          <div className="font-thin font-mono text-xs">
+        <div className="flex flex-row justify-between pl-1 w-full items-center text-white text-xs">
+          <div className="font-normal font-sans">County Impacts</div>
+          {errorMessage && (
+            <div className="bg-red-500 font-bold px-2">{errorMessage}</div>
+          )}
+          <div className="font-thin font-mono">
             [build#{process.env.REACT_APP_CI_RUN_NUMBER}]
           </div>
         </div>

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { CSSTransition } from "react-transition-group";
 import { MapContainer, TileLayer, GeoJSON, useMapEvents } from "react-leaflet";
 import {
@@ -27,7 +27,8 @@ const providers = [
 
 const activeProvider = 0;
 
-const center: LatLngExpression = [33.813534, -84.403339];
+const DEFAULT_CENTER: LatLngExpression = [33.813534, -84.403339];
+const DEFAULT_ZOOM: number = 9;
 
 const style = {
   fillColor: "green",
@@ -76,9 +77,11 @@ function countyToFeature({
 }
 
 function ProgressBar({ active }: ProgressBarParams): JSX.Element {
+  const nodeRef = useRef(null);
   return (
     <div className="flex h-2 overflow-hidden bg-white border-t border-b border-white">
       <CSSTransition
+        nodeRef={nodeRef}
         in={active}
         timeout={999999}
         classNames={{
@@ -86,7 +89,10 @@ function ProgressBar({ active }: ProgressBarParams): JSX.Element {
           enterActive: "w-full duration-long",
         }}
       >
-        <div className="bg-yellow-500 shadow-none transition-all ease-linear"></div>
+        <div
+          ref={nodeRef}
+          className="bg-yellow-500 shadow-none transition-all ease-linear"
+        ></div>
       </CSSTransition>
     </div>
   );
@@ -179,8 +185,8 @@ export default function App() {
     <div className="container flex flex-col h-screen p-2 mx-auto">
       <MapContainer
         tap={false}
-        center={center}
-        zoom={11}
+        center={DEFAULT_CENTER}
+        zoom={DEFAULT_ZOOM}
         className="flex-grow w-full h-full rounded-t-lg"
         whenCreated={(map) => loadVisibleCounties(map)}
       >

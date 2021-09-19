@@ -1,6 +1,5 @@
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
-import numpy as np
 import pandas
 
 
@@ -61,7 +60,7 @@ def get_beacode_from_naics2017(*, db, naics2017_code):
 
     df["COSINE"] = tgt_cosine.flatten().tolist()
 
-    return df.iloc[df["COSINE"].idxmax()]  # type: ignore
+    return df.iloc[df["COSINE"].idxmax()]["BEA_CODE"]  # type: ignore
 
 
 def get_beacode_from_naics2007(*, db, naics2007_code):

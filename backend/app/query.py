@@ -54,7 +54,7 @@ def zcta():
 
 
 @blueprint.route("/county/mbr", methods=["POST"])
-def county():
+def county_mbr():
     mbr = request.get_json()
     if mbr is None:
         raise InvalidAPIUsage("No JSON body found.")
@@ -95,24 +95,27 @@ def get_beacodes_by_zipcode(zipcode) -> pandas.DataFrame:
     df.drop_duplicates("BEA_CODE", inplace=True)
     return df
 
-def get_beacodes_by_county(statefp,countyfp) -> pandas.DataFrame:
-    codes = app.cbp.query.get_naics_by_county(
+def get_industries_by_county(*, statefp,countyfp) -> pandas.DataFrame:
+    industries = app.cbp.query.get_industries_by_county(
         base_url=current_app.config["CENSUS_BASE_URL"],
         api_key=current_app.config["CENSUS_API_KEY"],
         statefp=statefp,
         countyfp=countyfp
     )
 
-    df = pandas.DataFrame(
-        [
-            app.bea.query.get_beacode_from_naics2017(db=get_db(), naics2017_code=code)
-            for code in codes
-        ]
+    industries["BEA_CODE"] = industries.apply(
+        lambda row: app.bea.query.get_beacode_from_naics2017(
+            db=get_db(),
+            naics2017_code=row["NAICS2017_CODE"]), axis=1)
+
+    sectors = app.useeio.query.get_all_sectors(
+        base_url=current_app.config["USEEIO_BASE_URL"],
+        api_key=current_app.config["USEEIO_API_KEY"],
     )
 
-    df["COUNT"] = df.groupby(["BEA_CODE"])["BEA_CODE"].transform("size")
-    df.drop_duplicates("BEA_CODE", inplace=True)
-    return df
+    industries = pandas.merge(left=industries, right=sectors, left_on="BEA_CODE", right_on="code")
+
+    return industries
 
 
 @blueprint.route("/useeio/matrices", methods=["POST"])
@@ -160,6 +163,29 @@ def zipcode():
     matrices = app.useeio.query.get_matrices()
     filtered = matrices["D"].filter(items=df["id"], axis="columns")
     return {"results": filtered.to_dict("records")}
+
+@blueprint.route("/county", methods=["POST"])
+def county():
+    json_data = request.get_json()
+    if json_data is None:
+        raise InvalidAPIUsage("No JSON body found.")
+
+    schema = {
+        "type": "object",
+        "properties": {
+            "statefp": {"type": "string"},
+            "countyfp": {"type": "string"},
+        },
+        "required": ["statefp","countyfp"],
+    }
+
+    jsonschema.validate(instance=json_data, schema=schema)
+
+    industries = get_industries_by_county(statefp=json_data["statefp"],countyfp=json_data["countyfp"])
+
+    matrices = app.useeio.query.get_matrices()
+    filtered = matrices["D"].filter(items=industries["id"], axis="columns")
+    return {"results": industries.to_dict("records")}
 
 
 @blueprint.route("/naics", methods=["POST"])

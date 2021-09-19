@@ -1,4 +1,5 @@
 import requests
+import pandas
 
 
 def urljoin(parts):
@@ -25,21 +26,23 @@ def get_naics_by_zipcode(*, base_url, api_key, zipcode):
     return results
 
 
-def get_naics_by_county(*, base_url, api_key, statefp, countyfp):
+def get_industries_by_county(*, base_url, api_key, statefp, countyfp):
     data = requests.get(
         urljoin([base_url, "2019", "cbp"]),
         params={
-            "get": ",".join(["NAICS2017"]),
+            "get": ",".join(["NAICS2017", "PAYANN", "EMP"]),
             "for": f"county:{countyfp}",
             "in": f"state:{statefp}",
             "key": api_key,
         },
     ).json()
 
-    results = []
-    for d in data:
-        code = d[0]
-        if len(code) == 6:
-            results.append(code)
+    rows = [
+        pandas.DataFrame(
+            data={"NAICS2017_CODE": [d[0]], "PAYANN": [int(d[1])], "EMP": [int(d[2])]}
+        )
+        for d in data
+        if len(d[0]) == 6
+    ]
 
-    return results
+    return pandas.concat(rows)

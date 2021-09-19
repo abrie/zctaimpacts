@@ -55,6 +55,7 @@ def get_counties_intersecting_mbr(*, spatial_db, mbr):
             {
                 "statefp": row["STATEFP"],
                 "countyfp": row["COUNTYFP"],
+                "geoid": row["GEOID"],
                 "geometry": json.loads(row["geometry"]),
             }
             for row in rows

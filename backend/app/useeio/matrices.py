@@ -4,10 +4,9 @@ import importlib.resources as pkg_resources
 matrices = None
 
 
-def load_matrices():
+def load_matrices() -> dict:
     from . import resources
 
-    print("LOADING MATRICES")
     with pkg_resources.path(resources, "USEEIOv1.1_Matrices.xlsx") as filepath:
         with pandas.ExcelFile(filepath) as xls:
             return {
@@ -21,11 +20,10 @@ def load_matrices():
             }
 
 
-def get_matrices():
+def get_matrices() -> dict:
     global matrices
 
     if matrices is None:
         matrices = load_matrices()
 
-    print("RETURNING MATRICES")
     return matrices

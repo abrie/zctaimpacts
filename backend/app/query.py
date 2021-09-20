@@ -128,7 +128,9 @@ def get_industries_by_county(*, statefp,countyfp) -> pandas.DataFrame:
     industries = industries.drop_duplicates()
     if industries is None:
         raise AssertionError("Unexpectedly dropped everything as duplicates.")
-    print(industries.columns)
+
+    D_transposed = app.useeio.query.get_matrices()["D"].transpose()
+    industries = industries.merge(D_transposed, left_on="id", right_index=True)
 
     return industries
 

@@ -50,6 +50,24 @@ interface ProgressBarParams {
   active: boolean;
 }
 
+interface QueryCountyDetailsResponse {
+  results: Industry[];
+}
+
+interface CountyDetails {
+  industries: Industry[];
+}
+
+interface Industry {
+  BEA_CODE: string;
+  TOTAL_EMPLOYEES: number;
+  TOTAL_ESTABLISHMENTS: number;
+  TOTAL_PAYROLL: number;
+  TOTAL_REVENUE: number;
+  id: string;
+  name: string;
+}
+
 interface County {
   statefp: string;
   countyfp: string;
@@ -74,6 +92,32 @@ function countyToFeature({
     },
     geometry,
   };
+}
+
+interface CountyDetailsViewParams {
+  countyDetails: CountyDetails | undefined;
+}
+
+function CountyDetailsView({
+  countyDetails,
+}: CountyDetailsViewParams): JSX.Element {
+  if (!countyDetails) {
+    return (
+      <div className="text-sm flex-grow overflow-scroll bg-blue-300"></div>
+    );
+  }
+  return (
+    <div className="text-sm absolute inset-0 overflow-hidden overflow-scroll">
+      {countyDetails.industries.map((industry) => (
+        <div
+          key={industry.BEA_CODE}
+          className="overflow-hidden truncate overlow-ellipsis whitespace-nowrap"
+        >
+          {industry.name}
+        </div>
+      ))}
+    </div>
+  );
 }
 
 function ProgressBar({ active }: ProgressBarParams): JSX.Element {
@@ -101,8 +145,11 @@ function ProgressBar({ active }: ProgressBarParams): JSX.Element {
 export default function App() {
   const [layers, setLayers] = useState<County[]>([]);
   const [showProgress, setShowProgress] = useState<boolean>(false);
-  const [loadedCounty, setLoadedCounty] = useState<
-    { statefp: string; countyfp: string } | undefined
+  const [loadedCounty, setLoadedCounty] = useState<County | undefined>(
+    undefined
+  );
+  const [loadedCountyDetails, setLoadedCountyDetails] = useState<
+    CountyDetails | undefined
   >(undefined);
   const [errorMessage, setErrorMessage] = useState<string | undefined>(
     undefined
@@ -120,9 +167,12 @@ export default function App() {
       try {
         setShowProgress(true);
         setErrorMessage(undefined);
-        const response = await axios.post("/query/county", data);
+        const response = await axios.post<QueryCountyDetailsResponse>(
+          "/query/county",
+          data
+        );
         setShowProgress(false);
-        console.log(response.data);
+        setLoadedCountyDetails({ industries: response.data.results });
       } catch (e: unknown) {
         setShowProgress(false);
         setErrorMessage(`${e}`);
@@ -176,35 +226,41 @@ export default function App() {
       e.target.setStyle(style);
     },
     click: (e: LeafletMouseEvent) => {
-      const { statefp, countyfp } = e.propagatedFrom.feature.properties;
-      setLoadedCounty({ statefp, countyfp });
+      const { statefp, countyfp, geoid } = e.propagatedFrom.feature.properties;
+      const geometry = e.propagatedFrom.feature.geometry;
+      setLoadedCounty({ statefp, countyfp, geoid, geometry });
     },
   };
 
   return (
-    <div className="container flex flex-col h-screen p-2 mx-auto">
-      <MapContainer
-        tap={false}
-        center={DEFAULT_CENTER}
-        zoom={DEFAULT_ZOOM}
-        className="flex-grow w-full h-full rounded-t-lg"
-        whenCreated={(map) => loadVisibleCounties(map)}
-      >
-        <TileLayer
-          url={providers[activeProvider].url}
-          attribution={providers[activeProvider].attribution}
-        />
-        <MapComponent />
-        {layers.map((county: County) => (
-          <GeoJSON
-            key={county.geoid}
-            data={countyToFeature(county)}
-            style={style}
-            eventHandlers={eventHandlers}
+    <div className="container flex flex-col max-h-screen h-screen mx-auto">
+      <div className="flex flex-grow flex-row">
+        <MapContainer
+          tap={false}
+          center={DEFAULT_CENTER}
+          zoom={DEFAULT_ZOOM}
+          className="flex-grow"
+          whenCreated={(map) => loadVisibleCounties(map)}
+        >
+          <TileLayer
+            url={providers[activeProvider].url}
+            attribution={providers[activeProvider].attribution}
           />
-        ))}
-      </MapContainer>
-      <div className="flex flex-grow-0 h10 bg-gray-400 flex-col border-t-2 border-gray rounded-b-sm">
+          <MapComponent />
+          {layers.map((county: County) => (
+            <GeoJSON
+              key={county.geoid}
+              data={countyToFeature(county)}
+              style={style}
+              eventHandlers={eventHandlers}
+            />
+          ))}
+        </MapContainer>
+        <div className="relative flex flex-col flex-grow-0 w-32 border-l-4 border-gray-200 bg-green-400">
+          <CountyDetailsView countyDetails={loadedCountyDetails} />
+        </div>
+      </div>
+      <div className="flex flex-grow-0 h-20 bg-gray-400 flex-col border-t-2 border-gray rounded-b-sm">
         <ProgressBar active={showProgress} />
         <div className="flex flex-row justify-between pl-1 w-full items-center text-white text-xs">
           <div className="font-normal font-sans">County Impacts</div>

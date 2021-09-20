@@ -51,7 +51,7 @@ interface ProgressBarParams {
 }
 
 interface QueryCountyDetailsResponse {
-  results: Industry[];
+  industries: Industry[];
 }
 
 interface CountyDetails {
@@ -102,20 +102,21 @@ function CountyDetailsView({
   countyDetails,
 }: CountyDetailsViewParams): JSX.Element {
   if (!countyDetails) {
-    return (
-      <div className="text-sm flex-grow overflow-scroll bg-blue-300"></div>
-    );
+    return <></>;
   }
   return (
-    <div className="text-sm absolute inset-0 overflow-hidden overflow-scroll">
-      {countyDetails.industries.map((industry) => (
-        <div
-          key={industry.BEA_CODE}
-          className="overflow-hidden truncate overlow-ellipsis whitespace-nowrap"
-        >
-          {industry.name}
+    <div className="absolute inset-0 overflow-hidden overflow-scroll">
+      <div className="flex flex-col m-2 p-2 bg-white border-4 border-black">
+        <div className="text-xs font-light pb-1">Community/Region Profile</div>
+        <div className="text-lg font-extrabold border-b-8 pb-3 border-black">
+          Georgia
         </div>
-      ))}
+        <div className="border-b pb-1 border-black">
+          <span className="text-sm font-bold pr-1">Counties:</span>
+          <span className="text-sm font-light">Fulton</span>
+        </div>
+        <div></div>
+      </div>
     </div>
   );
 }
@@ -172,7 +173,8 @@ export default function App() {
           data
         );
         setShowProgress(false);
-        setLoadedCountyDetails({ industries: response.data.results });
+        setLoadedCountyDetails({ industries: response.data.industries });
+        console.log(response.data);
       } catch (e: unknown) {
         setShowProgress(false);
         setErrorMessage(`${e}`);
@@ -256,7 +258,7 @@ export default function App() {
             />
           ))}
         </MapContainer>
-        <div className="relative flex flex-col flex-grow-0 w-32 border-l-4 border-gray-200 bg-green-400">
+        <div className="relative flex flex-col flex-grow-0 w-64 border-l-4 border-gray-200">
           <CountyDetailsView countyDetails={loadedCountyDetails} />
         </div>
       </div>

@@ -200,9 +200,11 @@ def county():
 
     industries = get_industries_by_county(statefp=json_data["statefp"],countyfp=json_data["countyfp"])
 
-    matrices = app.useeio.query.get_matrices()
-    filtered = matrices["D"].filter(items=industries["id"], axis="columns")
-    return {"results": industries.to_dict("records")}
+    columns = app.useeio.query.get_matrices()["D"].index.to_list()
+    data = industries[columns].sum()
+    totals = pandas.DataFrame(data=[data],columns=columns)
+
+    return {"industries": industries.to_dict("records"), "totals":totals.to_dict('records')[0]}
 
 
 @blueprint.route("/naics", methods=["POST"])

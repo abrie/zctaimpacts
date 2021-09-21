@@ -2,6 +2,7 @@ import pandas
 import jsonschema
 from flask import Blueprint, request, current_app
 
+
 import app.gis.query
 import app.cbp.query
 import app.bea.query
@@ -97,21 +98,23 @@ def get_beacodes_by_zipcode(zipcode) -> pandas.DataFrame:
     df.drop_duplicates("BEA_CODE", inplace=True)
     return df
 
-def get_industries_by_county(*, statefp,countyfp) -> pandas.DataFrame:
+
+def get_industries_by_county(*, statefp, countyfp) -> pandas.DataFrame:
     industries = app.cbp.query.get_industries_by_county(
         base_url=current_app.config["CENSUS_BASE_URL"],
         api_key=current_app.config["CENSUS_API_KEY"],
         statefp=statefp,
-        countyfp=countyfp
+        countyfp=countyfp,
     )
 
     industries["BEA_CODE"] = industries.apply(
         lambda row: app.bea.query.get_beacode_from_naics2017(
-            db=get_db(),
-            naics2017_code=row["NAICS2017_CODE"]), axis=1)
+            db=get_db(), naics2017_code=row["NAICS2017_CODE"]
+        ),
+        axis=1,
+    )
 
-    industries["REVENUE"] = industries.apply(
-        lambda row: row["EMP"] * 1e5, axis=1)
+    industries["REVENUE"] = industries.apply(lambda row: row["EMP"] * 1e5, axis=1)
 
     sectors = app.useeio.query.get_all_sectors(
         base_url=current_app.config["USEEIO_BASE_URL"],
@@ -120,11 +123,24 @@ def get_industries_by_county(*, statefp,countyfp) -> pandas.DataFrame:
 
     industries = industries.merge(right=sectors, left_on="BEA_CODE", right_on="code")
 
-    industries['TOTAL_PAYROLL'] = industries.groupby(['id'])['PAYANN'].transform('sum')
-    industries['TOTAL_REVENUE'] = industries.groupby(['id'])['REVENUE'].transform('sum')
-    industries['TOTAL_EMPLOYEES'] = industries.groupby(['id'])['EMP'].transform('sum')
-    industries['TOTAL_ESTABLISHMENTS'] = industries.groupby(['id'])['id'].transform('count')
-    industries = industries.drop(columns=["NAICS2017_CODE","PAYANN","EMP","REVENUE", "code","location","index","description"])
+    industries["TOTAL_PAYROLL"] = industries.groupby(["id"])["PAYANN"].transform("sum")
+    industries["TOTAL_REVENUE"] = industries.groupby(["id"])["REVENUE"].transform("sum")
+    industries["TOTAL_EMPLOYEES"] = industries.groupby(["id"])["EMP"].transform("sum")
+    industries["TOTAL_ESTABLISHMENTS"] = industries.groupby(["id"])["id"].transform(
+        "count"
+    )
+    industries = industries.drop(
+        columns=[
+            "NAICS2017_CODE",
+            "PAYANN",
+            "EMP",
+            "REVENUE",
+            "code",
+            "location",
+            "index",
+            "description",
+        ]
+    )
     if industries is None:
         raise AssertionError("Unexpectedly removed all columns!")
     industries = industries.drop_duplicates()
@@ -135,22 +151,6 @@ def get_industries_by_county(*, statefp,countyfp) -> pandas.DataFrame:
     industries = industries.merge(D_transposed, left_on="id", right_index=True)
 
     return industries
-
-
-def matrices():
-    json_data = request.get_json()
-    if json_data is None:
-        raise InvalidAPIUsage("No JSON body found.")
-    schema = {
-        "type": "object",
-        "properties": {},
-        "required": [],
-    }
-
-    jsonschema.validate(instance=json_data, schema=schema)
-
-    dfs = app.useeio.query.get_matrices()
-    return {}
 
 
 @blueprint.route("/zipcode", methods=["POST"])
@@ -182,6 +182,7 @@ def zipcode():
     filtered = matrices["D"].filter(items=df["id"], axis="columns")
     return {"results": filtered.to_dict("records")}
 
+
 @blueprint.route("/county", methods=["POST"])
 def county():
     json_data = request.get_json()
@@ -194,21 +195,27 @@ def county():
             "statefp": {"type": "number"},
             "countyfp": {"type": "number"},
         },
-        "required": ["statefp","countyfp"],
+        "required": ["statefp", "countyfp"],
     }
 
     jsonschema.validate(instance=json_data, schema=schema)
 
-    industries = get_industries_by_county(statefp=json_data["statefp"], countyfp=json_data["countyfp"])
+    industries = get_industries_by_county(
+        statefp=json_data["statefp"], countyfp=json_data["countyfp"]
+    )
 
     totals = compute_total_emissions(industries)
-    return {"industries": industries.to_dict("records"), "totals":totals.to_dict('records')[0]}
+    return {
+        "industries": industries.to_dict("records"),
+        "totals": totals.to_dict("records")[0],
+    }
 
 
 def compute_total_emissions(industries):
     columns = app.useeio.query.get_matrices()["D"].index.to_list()
     data = industries[columns].sum()
-    return pandas.DataFrame(data=[data],columns=columns)
+    return pandas.DataFrame(data=[data], columns=columns)
+
 
 @blueprint.route("/naics", methods=["POST"])
 def naics():

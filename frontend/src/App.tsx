@@ -377,7 +377,7 @@ export default function App() {
           <CountyDetailsView countyDetails={loadedCountyDetails} />
         </div>
       </div>
-      <div className="flex flex-grow-0 h-20 bg-gray-400 flex-col border-t-2 border-gray rounded-b-sm">
+      <div className="flex flex-grow-0 h-6 bg-gray-400 flex-col border-t-2 border-gray rounded-b-sm">
         <ProgressBar active={showProgress} />
         <div className="flex flex-row justify-between pl-1 w-full items-center text-white text-xs">
           <div className="font-normal font-sans">County Impacts</div>

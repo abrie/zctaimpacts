@@ -131,6 +131,24 @@ interface CountyDetailsViewParams {
   countyDetails: CountyDetails | undefined;
 }
 
+interface ImpactLineParams {
+  label: string;
+  units: string | JSX.Element;
+  value: number | string;
+}
+
+function ImpactLine({ label, units, value }: ImpactLineParams): JSX.Element {
+  return (
+    <div className="flex flex-row border-b border-black mb-1 pb-1">
+      <div className="whitespace-nowrap text-xs font-bold w-24 truncate overflow-hidden overflow-ellipsis">
+        {label}
+      </div>
+      <div className="text-xs whitespace-nowrap">({units})</div>
+      <div className="text-xs ml-auto">{value}</div>
+    </div>
+  );
+}
+
 function CountyDetailsView({
   countyDetails,
 }: CountyDetailsViewParams): JSX.Element {
@@ -144,30 +162,59 @@ function CountyDetailsView({
         <div className="text-lg font-extrabold border-b-8 pb-3 border-black">
           {countyDetails.county.state_name}
         </div>
-        <div className="border-b pb-1 border-black">
+        <div className="border-b pb-1 border-black mb-2">
           <span className="text-sm font-bold pr-1">County:</span>
           <span className="text-sm font-light">
             {countyDetails.county.county_name}
           </span>
         </div>
-        <div>
-          <span className="text-xs font-bold">Global Warming Potential</span>
-          <span className="text-xs">
-            (kg co<sub>2</sub> eq)
-          </span>
-          <span className="text-xs">
-            {Math.round(countyDetails.totals["impact potential/gcc/kg co2 eq"])}
-          </span>
-        </div>
-        <div>
-          <span className="text-xs font-bold">Ozone Depletion</span>
-          <span className="text-xs">(kg CFC 11 eq)</span>
-          <span className="text-xs">
-            {countyDetails.totals["impact potential/ozon/kg cfc11-eq"].toFixed(
-              3
-            )}
-          </span>
-        </div>
+        <ImpactLine
+          label={"Global Warming Potential"}
+          units={
+            <span>
+              kg co<sub>2</sub> eq
+            </span>
+          }
+          value={Math.round(
+            countyDetails.totals["impact potential/gcc/kg co2 eq"]
+          )}
+        ></ImpactLine>
+        <ImpactLine
+          label={"Ozone Depletion"}
+          units={"kg CFC 11 eq"}
+          value={countyDetails.totals[
+            "impact potential/ozon/kg cfc11-eq"
+          ].toFixed(3)}
+        ></ImpactLine>
+        <ImpactLine
+          label={"Acidification"}
+          units={
+            <span>
+              kg SO<sub>2</sub> eq
+            </span>
+          }
+          value={countyDetails.totals[
+            "impact potential/acid/kg so2-eq"
+          ].toFixed(2)}
+        ></ImpactLine>
+        <ImpactLine
+          label={"Eutrification"}
+          units={"kg N eq"}
+          value={countyDetails.totals["impact potential/eutr/kg n eq"].toFixed(
+            2
+          )}
+        ></ImpactLine>
+        <ImpactLine
+          label={"Smog Formation"}
+          units={
+            <span>
+              kg O<sub>3</sub> eq
+            </span>
+          }
+          value={countyDetails.totals["impact potential/smog/kg o3 eq"].toFixed(
+            2
+          )}
+        ></ImpactLine>
       </div>
     </div>
   );

@@ -52,11 +52,37 @@ interface ProgressBarParams {
 
 interface QueryCountyDetailsResponse {
   industries: Industry[];
+  totals: Impacts;
 }
+
+type Impacts = {
+  "economic & social/jobs/p": number;
+  "economic & social/vadd/$": number;
+  "impact potential/acid/kg so2-eq": number;
+  "impact potential/etox/ctue": number;
+  "impact potential/eutr/kg n eq": number;
+  "impact potential/gcc/kg co2 eq": number;
+  "impact potential/hc/ctuh": number;
+  "impact potential/hnc/ctuh": number;
+  "impact potential/hrsp/kg pm2.5 eq": number;
+  "impact potential/htox/ctuh": number;
+  "impact potential/ozon/kg cfc11-eq": number;
+  "impact potential/smog/kg o3 eq": number;
+  "releases/haps/kg": number;
+  "releases/metl/kg": number;
+  "releases/pest/kg": number;
+  "resource use/enrg/mj": number;
+  "resource use/land/m2*a": number;
+  "resource use/mine/kg": number;
+  "resource use/nren/mj": number;
+  "resource use/ren/mj": number;
+  "resource use/watr/m3": number;
+};
 
 interface CountyDetails {
   county: County;
   industries: Industry[];
+  totals: Impacts;
 }
 
 interface Industry {
@@ -124,7 +150,24 @@ function CountyDetailsView({
             {countyDetails.county.county_name}
           </span>
         </div>
-        <div></div>
+        <div>
+          <span className="text-xs font-bold">Global Warming Potential</span>
+          <span className="text-xs">
+            (kg co<sub>2</sub> eq)
+          </span>
+          <span className="text-xs">
+            {Math.round(countyDetails.totals["impact potential/gcc/kg co2 eq"])}
+          </span>
+        </div>
+        <div>
+          <span className="text-xs font-bold">Ozone Depletion</span>
+          <span className="text-xs">(kg CFC 11 eq)</span>
+          <span className="text-xs">
+            {countyDetails.totals["impact potential/ozon/kg cfc11-eq"].toFixed(
+              3
+            )}
+          </span>
+        </div>
       </div>
     </div>
   );
@@ -184,7 +227,8 @@ export default function App() {
         setShowProgress(false);
         setLoadedCountyDetails({
           industries: response.data.industries,
-          county: { ...loadedCounty },
+          totals: response.data.totals,
+          county: loadedCounty,
         });
       } catch (e: unknown) {
         setShowProgress(false);

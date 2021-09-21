@@ -356,6 +356,7 @@ export default function App() {
           tap={false}
           center={DEFAULT_CENTER}
           zoom={DEFAULT_ZOOM}
+          scrollWheelZoom={false}
           className="flex-grow"
           whenCreated={(map) => loadVisibleCounties(map)}
         >

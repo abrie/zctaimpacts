@@ -55,6 +55,7 @@ interface QueryCountyDetailsResponse {
 }
 
 interface CountyDetails {
+  county: County;
   industries: Industry[];
 }
 
@@ -69,8 +70,10 @@ interface Industry {
 }
 
 interface County {
-  statefp: string;
-  countyfp: string;
+  statefp: number;
+  countyfp: number;
+  county_name: string;
+  state_name: string;
   geoid: string;
   geometry: GeoJSON.Polygon;
 }
@@ -82,6 +85,8 @@ interface QueryCountyResponse {
 function countyToFeature({
   statefp,
   countyfp,
+  county_name,
+  state_name,
   geometry,
 }: County): GeoJSON.Feature {
   return {
@@ -89,6 +94,8 @@ function countyToFeature({
     properties: {
       statefp,
       countyfp,
+      county_name,
+      state_name,
     },
     geometry,
   };
@@ -109,11 +116,13 @@ function CountyDetailsView({
       <div className="flex flex-col m-2 p-2 bg-white border-4 border-black">
         <div className="text-xs font-light pb-1">Community/Region Profile</div>
         <div className="text-lg font-extrabold border-b-8 pb-3 border-black">
-          Georgia
+          {countyDetails.county.state_name}
         </div>
         <div className="border-b pb-1 border-black">
-          <span className="text-sm font-bold pr-1">Counties:</span>
-          <span className="text-sm font-light">Fulton</span>
+          <span className="text-sm font-bold pr-1">County:</span>
+          <span className="text-sm font-light">
+            {countyDetails.county.county_name}
+          </span>
         </div>
         <div></div>
       </div>
@@ -173,8 +182,10 @@ export default function App() {
           data
         );
         setShowProgress(false);
-        setLoadedCountyDetails({ industries: response.data.industries });
-        console.log(response.data);
+        setLoadedCountyDetails({
+          industries: response.data.industries,
+          county: { ...loadedCounty },
+        });
       } catch (e: unknown) {
         setShowProgress(false);
         setErrorMessage(`${e}`);
@@ -228,9 +239,22 @@ export default function App() {
       e.target.setStyle(style);
     },
     click: (e: LeafletMouseEvent) => {
-      const { statefp, countyfp, geoid } = e.propagatedFrom.feature.properties;
+      const {
+        statefp,
+        countyfp,
+        county_name,
+        state_name,
+        geoid,
+      } = e.propagatedFrom.feature.properties;
       const geometry = e.propagatedFrom.feature.geometry;
-      setLoadedCounty({ statefp, countyfp, geoid, geometry });
+      setLoadedCounty({
+        statefp,
+        countyfp,
+        county_name,
+        state_name,
+        geoid,
+        geometry,
+      });
     },
   };
 

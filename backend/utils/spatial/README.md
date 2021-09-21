@@ -15,3 +15,7 @@ select * from zcta_shp where MBRContains(BuildMBR(-85.605165, 30.357851, -80.839
 ```
 SELECT zcta_geojson.ZCTA5CE20, zcta_geojson.geometry from zcta_geojson inner join (select ZCTA5CE20 from zcta_shp where MBRContains(BuildMBR(-85.605165, 30.357851, -80.839729, 35.000659, 4326), "geometry")) as zcta_shp ON zcta_geojson.ZCTA5CE20 = zcta_shp.ZCTA5CE20;
 ```
+
+# FIPS code translations
+https://raw.githubusercontent.com/kjhealy/fips-codes/master/county_fips_master.csv
+https://raw.githubusercontent.com/kjhealy/fips-codes/master/state_fips_master.csv

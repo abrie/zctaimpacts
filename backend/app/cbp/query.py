@@ -27,15 +27,21 @@ def get_naics_by_zipcode(*, base_url, api_key, zipcode):
 
 
 def get_industries_by_county(*, base_url, api_key, statefp, countyfp):
-    data = requests.get(
+    response = requests.get(
         urljoin([base_url, "2019", "cbp"]),
         params={
             "get": ",".join(["NAICS2017", "PAYANN", "EMP"]),
-            "for": f"county:{countyfp}",
-            "in": f"state:{statefp}",
+            "for": f"county:{countyfp:03d}",
+            "in": f"state:{statefp:02d}",
             "key": api_key,
         },
-    ).json()
+    )
+
+    try:
+        data = response.json()
+    except ValueError:
+        print("Unable to parse county response as json. Returning empty DataFrame.")
+        return pandas.DataFrame()
 
     rows = [
         pandas.DataFrame(

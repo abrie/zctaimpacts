@@ -72,9 +72,11 @@ def county_mbr():
 
     jsonschema.validate(instance=mbr, schema=schema)
 
-    return app.gis.query.get_counties_intersecting_mbr(
+    result = app.gis.query.get_counties_intersecting_mbr(
         spatial_db=get_spatial_db(), mbr=mbr
     )
+
+    return result
 
 
 def get_beacodes_by_zipcode(zipcode) -> pandas.DataFrame:
@@ -135,7 +137,6 @@ def get_industries_by_county(*, statefp,countyfp) -> pandas.DataFrame:
     return industries
 
 
-@blueprint.route("/useeio/matrices", methods=["POST"])
 def matrices():
     json_data = request.get_json()
     if json_data is None:
@@ -190,22 +191,24 @@ def county():
     schema = {
         "type": "object",
         "properties": {
-            "statefp": {"type": "string"},
-            "countyfp": {"type": "string"},
+            "statefp": {"type": "number"},
+            "countyfp": {"type": "number"},
         },
         "required": ["statefp","countyfp"],
     }
 
     jsonschema.validate(instance=json_data, schema=schema)
 
-    industries = get_industries_by_county(statefp=json_data["statefp"],countyfp=json_data["countyfp"])
+    industries = get_industries_by_county(statefp=json_data["statefp"], countyfp=json_data["countyfp"])
 
-    columns = app.useeio.query.get_matrices()["D"].index.to_list()
-    data = industries[columns].sum()
-    totals = pandas.DataFrame(data=[data],columns=columns)
-
+    totals = compute_total_emissions(industries)
     return {"industries": industries.to_dict("records"), "totals":totals.to_dict('records')[0]}
 
+
+def compute_total_emissions(industries):
+    columns = app.useeio.query.get_matrices()["D"].index.to_list()
+    data = industries[columns].sum()
+    return pandas.DataFrame(data=[data],columns=columns)
 
 @blueprint.route("/naics", methods=["POST"])
 def naics():

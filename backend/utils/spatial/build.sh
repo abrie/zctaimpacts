@@ -16,3 +16,5 @@ echo ".loadshp out/$COUNTY_SHAPEFILE county_shp UTF8 4326" | spatialite out/$DB
 echo "SELECT CreateSpatialIndex('county_shp', 'geometry');" | spatialite out/$DB
 npx mapshaper raw/$COUNTY_SHAPEFILE.shp -simplify dp 10% -o force format=geojson out/$COUNTY_SHAPEFILE.json
 geojson-to-sqlite out/$DB county_geojson out/$COUNTY_SHAPEFILE.json
+
+sqlite3 -csv out/$DB ".import raw/county_fips_master.csv county_fips"

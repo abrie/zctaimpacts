@@ -10,7 +10,13 @@ import axios from "axios";
 import { debounce } from "underscore";
 import { ProgressBar } from "./ProgressBar";
 import { TileProviders } from "./TileProviders";
-import { ImpactLine } from "./ImpactLabel";
+import { ImpactLabel } from "./ImpactLabel";
+import {
+  County,
+  CountyDetails,
+  QueryCountyDetailsResponse,
+  QueryCountyResponse,
+} from "./Api";
 
 const DEBOUNCE_TIME_MSEC = 1000;
 const activeProvider = 0;
@@ -34,64 +40,6 @@ const highlightStyle = {
   fillOpacity: 0.5,
 };
 
-interface QueryCountyDetailsResponse {
-  industries: Industry[];
-  totals: Impacts;
-}
-
-type Impacts = {
-  "economic & social/jobs/p": number;
-  "economic & social/vadd/$": number;
-  "impact potential/acid/kg so2-eq": number;
-  "impact potential/etox/ctue": number;
-  "impact potential/eutr/kg n eq": number;
-  "impact potential/gcc/kg co2 eq": number;
-  "impact potential/hc/ctuh": number;
-  "impact potential/hnc/ctuh": number;
-  "impact potential/hrsp/kg pm2.5 eq": number;
-  "impact potential/htox/ctuh": number;
-  "impact potential/ozon/kg cfc11-eq": number;
-  "impact potential/smog/kg o3 eq": number;
-  "releases/haps/kg": number;
-  "releases/metl/kg": number;
-  "releases/pest/kg": number;
-  "resource use/enrg/mj": number;
-  "resource use/land/m2*a": number;
-  "resource use/mine/kg": number;
-  "resource use/nren/mj": number;
-  "resource use/ren/mj": number;
-  "resource use/watr/m3": number;
-};
-
-interface CountyDetails {
-  county: County;
-  industries: Industry[];
-  totals: Impacts;
-}
-
-interface Industry {
-  BEA_CODE: string;
-  TOTAL_EMPLOYEES: number;
-  TOTAL_ESTABLISHMENTS: number;
-  TOTAL_PAYROLL: number;
-  TOTAL_REVENUE: number;
-  id: string;
-  name: string;
-}
-
-interface County {
-  statefp: number;
-  countyfp: number;
-  county_name: string;
-  state_name: string;
-  geoid: string;
-  geometry: GeoJSON.Polygon;
-}
-
-interface QueryCountyResponse {
-  results: County[];
-}
-
 function countyToFeature({
   statefp,
   countyfp,
@@ -109,81 +57,6 @@ function countyToFeature({
     },
     geometry,
   };
-}
-
-interface CountyDetailsViewParams {
-  countyDetails: CountyDetails | undefined;
-}
-
-function CountyDetailsView({
-  countyDetails,
-}: CountyDetailsViewParams): JSX.Element {
-  if (!countyDetails) {
-    return <></>;
-  }
-  return (
-    <div className="absolute inset-0 overflow-hidden overflow-scroll">
-      <div className="flex flex-col m-2 p-2 bg-white border-4 border-black">
-        <div className="text-xs font-light pb-1">Community/Region Profile</div>
-        <div className="text-lg font-extrabold border-b-8 pb-3 border-black">
-          {countyDetails.county.state_name}
-        </div>
-        <div className="border-b pb-1 border-black mb-2">
-          <span className="text-sm font-bold pr-1">County:</span>
-          <span className="text-sm font-light">
-            {countyDetails.county.county_name}
-          </span>
-        </div>
-        <ImpactLine
-          label={"Global Warming Potential"}
-          units={
-            <span>
-              kg co<sub>2</sub> eq
-            </span>
-          }
-          value={Math.round(
-            countyDetails.totals["impact potential/gcc/kg co2 eq"]
-          )}
-        ></ImpactLine>
-        <ImpactLine
-          label={"Ozone Depletion"}
-          units={"kg CFC 11 eq"}
-          value={countyDetails.totals[
-            "impact potential/ozon/kg cfc11-eq"
-          ].toFixed(3)}
-        ></ImpactLine>
-        <ImpactLine
-          label={"Acidification"}
-          units={
-            <span>
-              kg SO<sub>2</sub> eq
-            </span>
-          }
-          value={countyDetails.totals[
-            "impact potential/acid/kg so2-eq"
-          ].toFixed(2)}
-        ></ImpactLine>
-        <ImpactLine
-          label={"Eutrification"}
-          units={"kg N eq"}
-          value={countyDetails.totals["impact potential/eutr/kg n eq"].toFixed(
-            2
-          )}
-        ></ImpactLine>
-        <ImpactLine
-          label={"Smog Formation"}
-          units={
-            <span>
-              kg O<sub>3</sub> eq
-            </span>
-          }
-          value={countyDetails.totals["impact potential/smog/kg o3 eq"].toFixed(
-            2
-          )}
-        ></ImpactLine>
-      </div>
-    </div>
-  );
 }
 
 export default function App() {
@@ -319,7 +192,7 @@ export default function App() {
           ))}
         </MapContainer>
         <div className="relative flex flex-col flex-grow-0 w-64 border-l-4 border-gray-200">
-          <CountyDetailsView countyDetails={loadedCountyDetails} />
+          <ImpactLabel countyDetails={loadedCountyDetails} />
         </div>
       </div>
       <div className="flex flex-grow-0 h-6 bg-gray-400 flex-col border-t-2 border-gray rounded-b-sm">

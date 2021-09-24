@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { MapContainer, TileLayer, GeoJSON, useMapEvents } from "react-leaflet";
 import {
   LatLngExpression,
@@ -26,6 +26,7 @@ const DEFAULT_CENTER: LatLngExpression = [33.813534, -84.403339];
 const DEFAULT_ZOOM: number = 9;
 
 export default function App() {
+  const mapInstance = useRef<Map | undefined>(undefined);
   const [layers, setLayers] = useState<County[]>([]);
   const [showProgress, setShowProgress] = useState<boolean>(false);
   const [selectedCounty, selectCounty] = useState<County | undefined>(
@@ -64,6 +65,11 @@ export default function App() {
       }
     })();
   }, [selectedCounty]);
+
+  function setMapInstance(map: Map) {
+    mapInstance.current = map;
+    loadVisibleCounties(map);
+  }
 
   async function loadVisibleCounties(map: Map) {
     const bounds = map.getBounds();
@@ -139,7 +145,7 @@ export default function App() {
           zoom={DEFAULT_ZOOM}
           scrollWheelZoom={false}
           className="flex-grow"
-          whenCreated={(map) => loadVisibleCounties(map)}
+          whenCreated={(map) => setMapInstance(map)}
         >
           <TileLayer
             url={TileProviders[activeProvider].url}

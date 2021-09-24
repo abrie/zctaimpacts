@@ -17,47 +17,13 @@ import {
   QueryCountyDetailsResponse,
   QueryCountyResponse,
 } from "./Api";
+import { CountyStyle, countyToFeature } from "./Map";
 
 const DEBOUNCE_TIME_MSEC = 1000;
 const activeProvider = 0;
 
 const DEFAULT_CENTER: LatLngExpression = [33.813534, -84.403339];
 const DEFAULT_ZOOM: number = 9;
-
-const style = {
-  fillColor: "green",
-  weight: 1,
-  opacity: 0.15,
-  color: "blue",
-  dashArray: "1",
-  fillOpacity: 0,
-};
-
-const highlightStyle = {
-  weight: 5,
-  color: "lightgreen",
-  dashArray: "",
-  fillOpacity: 0.5,
-};
-
-function countyToFeature({
-  statefp,
-  countyfp,
-  county_name,
-  state_name,
-  geometry,
-}: County): GeoJSON.Feature {
-  return {
-    type: "Feature",
-    properties: {
-      statefp,
-      countyfp,
-      county_name,
-      state_name,
-    },
-    geometry,
-  };
-}
 
 export default function App() {
   const [layers, setLayers] = useState<County[]>([]);
@@ -141,10 +107,10 @@ export default function App() {
 
   const eventHandlers: LeafletEventHandlerFnMap = {
     mouseover: (e: LeafletMouseEvent) => {
-      e.target.setStyle(highlightStyle);
+      e.target.setStyle(CountyStyle.highlight);
     },
     mouseout: (e: LeafletMouseEvent) => {
-      e.target.setStyle(style);
+      e.target.setStyle(CountyStyle.normal);
     },
     click: (e: LeafletMouseEvent) => {
       const {
@@ -186,7 +152,7 @@ export default function App() {
             <GeoJSON
               key={county.geoid}
               data={countyToFeature(county)}
-              style={style}
+              style={CountyStyle.normal}
               eventHandlers={eventHandlers}
             />
           ))}

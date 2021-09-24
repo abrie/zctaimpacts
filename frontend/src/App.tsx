@@ -9,22 +9,9 @@ import {
 import axios from "axios";
 import { debounce } from "underscore";
 import { ProgressBar } from "./ProgressBar";
+import { TileProviders } from "./TileProviders";
 
 const DEBOUNCE_TIME_MSEC = 1000;
-const providers = [
-  {
-    url: "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png",
-    attribution:
-      '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
-  },
-  {
-    url:
-      "https://stamen-tiles-{s}.a.ssl.fastly.net/toner-lite/{z}/{x}/{y}{r}.png",
-    attribution:
-      '&copy; Map tiles by <a href="http://stamen.com">Stamen Design</a>, <a href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a> &mdash; Map data &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-  },
-];
-
 const activeProvider = 0;
 
 const DEFAULT_CENTER: LatLngExpression = [33.813534, -84.403339];
@@ -335,8 +322,8 @@ export default function App() {
           whenCreated={(map) => loadVisibleCounties(map)}
         >
           <TileLayer
-            url={providers[activeProvider].url}
-            attribution={providers[activeProvider].attribution}
+            url={TileProviders[activeProvider].url}
+            attribution={TileProviders[activeProvider].attribution}
           />
           <MapComponent />
           {layers.map((county: County) => (

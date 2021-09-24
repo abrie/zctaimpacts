@@ -1,5 +1,4 @@
-import { useState, useEffect, useRef } from "react";
-import { CSSTransition } from "react-transition-group";
+import { useState, useEffect } from "react";
 import { MapContainer, TileLayer, GeoJSON, useMapEvents } from "react-leaflet";
 import {
   LatLngExpression,
@@ -9,6 +8,7 @@ import {
 } from "leaflet";
 import axios from "axios";
 import { debounce } from "underscore";
+import { ProgressBar } from "./ProgressBar";
 
 const DEBOUNCE_TIME_MSEC = 1000;
 const providers = [
@@ -45,10 +45,6 @@ const highlightStyle = {
   dashArray: "",
   fillOpacity: 0.5,
 };
-
-interface ProgressBarParams {
-  active: boolean;
-}
 
 interface QueryCountyDetailsResponse {
   industries: Industry[];
@@ -216,28 +212,6 @@ function CountyDetailsView({
           )}
         ></ImpactLine>
       </div>
-    </div>
-  );
-}
-
-function ProgressBar({ active }: ProgressBarParams): JSX.Element {
-  const nodeRef = useRef(null);
-  return (
-    <div className="flex h-2 overflow-hidden bg-white border-t border-b border-white">
-      <CSSTransition
-        nodeRef={nodeRef}
-        in={active}
-        timeout={999999}
-        classNames={{
-          enter: "w-0",
-          enterActive: "w-full duration-long",
-        }}
-      >
-        <div
-          ref={nodeRef}
-          className="bg-yellow-500 shadow-none transition-all ease-linear"
-        ></div>
-      </CSSTransition>
     </div>
   );
 }

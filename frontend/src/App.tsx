@@ -28,24 +28,22 @@ const DEFAULT_ZOOM: number = 9;
 export default function App() {
   const [layers, setLayers] = useState<County[]>([]);
   const [showProgress, setShowProgress] = useState<boolean>(false);
-  const [loadedCounty, setLoadedCounty] = useState<County | undefined>(
+  const [selectedCounty, selectCounty] = useState<County | undefined>(
     undefined
   );
-  const [loadedCountyDetails, setLoadedCountyDetails] = useState<
-    CountyDetails | undefined
-  >(undefined);
+  const [impacts, setImpacts] = useState<CountyDetails | undefined>(undefined);
   const [errorMessage, setErrorMessage] = useState<string | undefined>(
     undefined
   );
 
   useEffect(() => {
     (async () => {
-      if (!loadedCounty) {
+      if (!selectedCounty) {
         return;
       }
       const data = {
-        statefp: loadedCounty.statefp,
-        countyfp: loadedCounty.countyfp,
+        statefp: selectedCounty.statefp,
+        countyfp: selectedCounty.countyfp,
       };
       try {
         setShowProgress(true);
@@ -55,17 +53,17 @@ export default function App() {
           data
         );
         setShowProgress(false);
-        setLoadedCountyDetails({
+        setImpacts({
           industries: response.data.industries,
           totals: response.data.totals,
-          county: loadedCounty,
+          county: selectedCounty,
         });
       } catch (e: unknown) {
         setShowProgress(false);
         setErrorMessage(`${e}`);
       }
     })();
-  }, [loadedCounty]);
+  }, [selectedCounty]);
 
   async function loadVisibleCounties(map: Map) {
     const bounds = map.getBounds();
@@ -121,7 +119,7 @@ export default function App() {
         geoid,
       } = e.propagatedFrom.feature.properties;
       const geometry = e.propagatedFrom.feature.geometry;
-      setLoadedCounty({
+      selectCounty({
         statefp,
         countyfp,
         county_name,
@@ -158,7 +156,7 @@ export default function App() {
           ))}
         </MapContainer>
         <div className="relative flex flex-col flex-grow-0 w-64 border-l-4 border-gray-200">
-          <ImpactLabel countyDetails={loadedCountyDetails} />
+          <ImpactLabel countyDetails={impacts} />
         </div>
       </div>
       <div className="flex flex-grow-0 h-6 bg-gray-400 flex-col border-t-2 border-gray rounded-b-sm">

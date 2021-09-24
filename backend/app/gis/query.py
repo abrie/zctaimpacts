@@ -33,7 +33,7 @@ def get_counties_intersecting_mbr(*, spatial_db, mbr):
     SELECT
       cast(county_geojson.STATEFP as INTEGER) as STATEFP,
       cast(county_geojson.COUNTYFP as INTEGER) as COUNTYFP,
-      county_geojson.GEOID,
+      cast(county_geojson.GEOID as INTEGER) as GEOID,
       county_geojson.NAME,
       county_geojson.geometry,
       county_fips.county_name,

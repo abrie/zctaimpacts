@@ -94,41 +94,35 @@ export default function App() {
     })();
   }, [selectedCounty]);
 
-  function SearchBox(): JSX.Element {
-    return (
-      <div>
-        <div>
-          <input
-            type="text"
-            placeholder="County"
-            onChange={(event) => setSearchTerms(event.target.value)}
-            value={searchTerms}
-          ></input>
-        </div>
-        <div
-          id="hits"
-          className="overflow-hidden overflow-scroll bg-gray-200 border border-black h-60"
-        >
-          {hits.map((hit: County) => (
-            <div
-              className="cursor-pointer hover:bg-green-400"
-              key={hit.geoid}
-              onClick={() => {
-                selectCounty({ ...hit });
-              }}
-            >
-              {hit.county_name}, {hit.state_name}
-            </div>
-          ))}
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="container flex flex-col h-screen max-h-screen mx-auto">
       <div className="flex flex-col flex-grow">
-        <SearchBox />
+        <div>
+          <div>
+            <input
+              type="text"
+              placeholder="County"
+              onChange={(event) => setSearchTerms(event.target.value)}
+              value={searchTerms}
+            ></input>
+          </div>
+          <div
+            id="hits"
+            className="overflow-hidden overflow-scroll bg-gray-200 border border-black h-60"
+          >
+            {hits.map((hit: County) => (
+              <div
+                className="cursor-pointer hover:bg-green-400"
+                key={hit.geoid}
+                onClick={() => {
+                  selectCounty({ ...hit });
+                }}
+              >
+                {hit.county_name}, {hit.state_name}
+              </div>
+            ))}
+          </div>
+        </div>
         <ImpactLabel countyDetails={impacts} />
       </div>
       <div className="flex flex-col flex-grow-0 h-6 bg-gray-400 border-t-2 rounded-b-sm border-gray">

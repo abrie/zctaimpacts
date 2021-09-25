@@ -56,6 +56,7 @@ def zcta():
 
 @blueprint.route("/county/all", methods=["GET"])
 def all_counties():
+    current_app.logger.info("Request for all counties.")
     result = app.gis.query.get_all_counties(spatial_db=get_spatial_db())
     return {"results": result.to_dict("records")}
 
@@ -205,6 +206,10 @@ def county():
     }
 
     jsonschema.validate(instance=json_data, schema=schema)
+
+    current_app.logger.info(
+        f"Request impact data for {json_data['statefp']} {json_data['countyfp']}"
+    )
 
     industries = get_industries_by_county(
         statefp=json_data["statefp"], countyfp=json_data["countyfp"]

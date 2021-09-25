@@ -128,7 +128,11 @@ export default function App() {
       </div>
       <div className="flex flex-col flex-grow-0 h-6 bg-gray-400 border-t-2 rounded-b-sm border-gray">
         <div className="flex flex-row items-center justify-between w-full pl-1 text-xs text-white">
-          <div className="font-sans font-normal">County Impacts</div>
+          <div className="font-sans font-normal">
+            <a href="https://github.com/abrie/zctaimpacts">
+              https://github.com/abrie/zctaimpacts
+            </a>
+          </div>
           {errorMessage && (
             <div className="px-2 font-bold bg-red-500">{errorMessage}</div>
           )}

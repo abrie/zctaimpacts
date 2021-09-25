@@ -123,10 +123,10 @@ export default function App() {
             ))}
           </div>
         </div>
+        <ProgressBar active={showProgress} />
         <ImpactLabel countyDetails={impacts} />
       </div>
       <div className="flex flex-col flex-grow-0 h-6 bg-gray-400 border-t-2 rounded-b-sm border-gray">
-        <ProgressBar active={showProgress} />
         <div className="flex flex-row items-center justify-between w-full pl-1 text-xs text-white">
           <div className="font-sans font-normal">County Impacts</div>
           {errorMessage && (

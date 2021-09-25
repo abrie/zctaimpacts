@@ -1,34 +1,22 @@
-import { useState, useEffect, useRef } from "react";
-import { MapContainer, TileLayer, GeoJSON, useMapEvents } from "react-leaflet";
-import {
-  LatLngExpression,
-  LeafletEventHandlerFnMap,
-  LeafletMouseEvent,
-  Map,
-} from "leaflet";
+import { useState, useEffect } from "react";
 import axios from "axios";
-import { debounce } from "underscore";
 import { ProgressBar } from "./ProgressBar";
-import { TileProviders } from "./TileProviders";
 import { ImpactLabel } from "./ImpactLabel";
+import lunr from "lunr";
 import {
   County,
   CountyDetails,
   QueryCountyDetailsResponse,
   QueryCountyResponse,
 } from "./Api";
-import { CountyStyle, countyToFeature } from "./Map";
-
-const DEBOUNCE_TIME_MSEC = 1000;
-const activeProvider = 0;
-
-const DEFAULT_CENTER: LatLngExpression = [33.813534, -84.403339];
-const DEFAULT_ZOOM: number = 9;
 
 export default function App() {
-  const mapInstance = useRef<Map | undefined>(undefined);
-  const [layers, setLayers] = useState<County[]>([]);
   const [showProgress, setShowProgress] = useState<boolean>(false);
+  const [hits, setHits] = useState<County[]>([]);
+  const [searchTerms, setSearchTerms] = useState<string>("");
+  const [countySearch, setCountySearch] = useState<
+    { index: lunr.Index; lookup: Record<string, County> } | undefined
+  >(undefined);
   const [selectedCounty, selectCounty] = useState<County | undefined>(
     undefined
   );
@@ -36,6 +24,46 @@ export default function App() {
   const [errorMessage, setErrorMessage] = useState<string | undefined>(
     undefined
   );
+
+  function buildCountyIndex(documents: County[]): lunr.Index {
+    return lunr(function (this: lunr.Builder) {
+      this.ref("geoid");
+      this.field("county_name");
+      this.field("state_name");
+
+      documents.forEach(function (this: lunr.Builder, doc) {
+        this.add(doc);
+      }, this);
+    });
+  }
+
+  function buildCountyLookup(documents: County[]): Record<string, County> {
+    return documents.reduce((acc, county) => {
+      return { ...acc, [county.geoid]: county };
+    }, {});
+  }
+
+  useEffect(() => {
+    (async () => {
+      const response = await axios.get<QueryCountyResponse>(
+        "/query/county/all"
+      );
+
+      const index = buildCountyIndex(response.data.results);
+      const lookup = buildCountyLookup(response.data.results);
+      setCountySearch({ index, lookup });
+    })();
+  }, []);
+
+  useEffect(() => {
+    if (countySearch && searchTerms) {
+      setHits(
+        countySearch.index
+          .search(searchTerms)
+          .map(({ ref }) => countySearch.lookup[ref])
+      );
+    }
+  }, [searchTerms, countySearch]);
 
   useEffect(() => {
     (async () => {
@@ -66,111 +94,45 @@ export default function App() {
     })();
   }, [selectedCounty]);
 
-  function setMapInstance(map: Map) {
-    mapInstance.current = map;
-    loadVisibleCounties(map);
-  }
-
-  async function loadVisibleCounties(map: Map) {
-    const bounds = map.getBounds();
-    const data = {
-      x1: bounds.getWest(),
-      y1: bounds.getNorth(),
-      x2: bounds.getEast(),
-      y2: bounds.getSouth(),
-    };
-    setShowProgress(true);
-    setErrorMessage(undefined);
-    try {
-      const response = await axios.post<QueryCountyResponse>(
-        "/query/county/mbr",
-        data
-      );
-      setShowProgress(false);
-      setLayers(response.data.results);
-    } catch (e: unknown) {
-      setShowProgress(false);
-      setErrorMessage(`${e}`);
-    }
-  }
-
-  function MapComponent() {
-    const map = useMapEvents({
-      resize: debounce(() => {
-        loadVisibleCounties(map);
-      }, DEBOUNCE_TIME_MSEC),
-      zoomend: debounce(() => {
-        loadVisibleCounties(map);
-      }, DEBOUNCE_TIME_MSEC),
-      dragend: debounce(() => {
-        loadVisibleCounties(map);
-      }, DEBOUNCE_TIME_MSEC),
-    });
-    return null;
-  }
-
-  const eventHandlers: LeafletEventHandlerFnMap = {
-    mouseover: (e: LeafletMouseEvent) => {
-      e.target.setStyle(CountyStyle.highlight);
-    },
-    mouseout: (e: LeafletMouseEvent) => {
-      e.target.setStyle(CountyStyle.normal);
-    },
-    click: (e: LeafletMouseEvent) => {
-      const {
-        statefp,
-        countyfp,
-        county_name,
-        state_name,
-        geoid,
-      } = e.propagatedFrom.feature.properties;
-      const geometry = e.propagatedFrom.feature.geometry;
-      selectCounty({
-        statefp,
-        countyfp,
-        county_name,
-        state_name,
-        geoid,
-        geometry,
-      });
-    },
-  };
-
   return (
-    <div className="container flex flex-col max-h-screen h-screen mx-auto">
-      <div className="flex flex-grow flex-row">
-        <MapContainer
-          tap={false}
-          center={DEFAULT_CENTER}
-          zoom={DEFAULT_ZOOM}
-          scrollWheelZoom={false}
-          className="flex-grow"
-          whenCreated={(map) => setMapInstance(map)}
+    <div className="container flex flex-col h-screen max-h-screen mx-auto">
+      <div className="flex flex-row flex-grow">
+        <div>
+          <div>
+            <input
+              type="text"
+              placeholder="County"
+              onChange={(event) => setSearchTerms(event.target.value)}
+              value={searchTerms}
+            ></input>
+          </div>
+          <div id="hits">
+            {hits.map((hit: County) => (
+              <div
+                className="hover:bg-green-400 cursor-pointer"
+                key={hit.geoid}
+                onClick={() => {
+                  selectCounty({ ...hit });
+                }}
+              >
+                {hit.county_name}, {hit.state_name}
+              </div>
+            ))}
+          </div>
+        </div>
+        <div
+          id="impact-label"
+          className="relative flex flex-col flex-grow-0 w-64 border-l-4 border-gray-200"
         >
-          <TileLayer
-            url={TileProviders[activeProvider].url}
-            attribution={TileProviders[activeProvider].attribution}
-          />
-          <MapComponent />
-          {layers.map((county: County) => (
-            <GeoJSON
-              key={county.geoid}
-              data={countyToFeature(county)}
-              style={CountyStyle.normal}
-              eventHandlers={eventHandlers}
-            />
-          ))}
-        </MapContainer>
-        <div className="relative flex flex-col flex-grow-0 w-64 border-l-4 border-gray-200">
           <ImpactLabel countyDetails={impacts} />
         </div>
       </div>
-      <div className="flex flex-grow-0 h-6 bg-gray-400 flex-col border-t-2 border-gray rounded-b-sm">
+      <div className="flex flex-col flex-grow-0 h-6 bg-gray-400 border-t-2 rounded-b-sm border-gray">
         <ProgressBar active={showProgress} />
-        <div className="flex flex-row justify-between pl-1 w-full items-center text-white text-xs">
-          <div className="font-normal font-sans">County Impacts</div>
+        <div className="flex flex-row items-center justify-between w-full pl-1 text-xs text-white">
+          <div className="font-sans font-normal">County Impacts</div>
           {errorMessage && (
-            <div className="bg-red-500 font-bold px-2">{errorMessage}</div>
+            <div className="px-2 font-bold bg-red-500">{errorMessage}</div>
           )}
           <div className="font-thin font-mono">
             [build#{process.env.REACT_APP_CI_RUN_NUMBER}]

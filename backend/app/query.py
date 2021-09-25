@@ -54,6 +54,12 @@ def zcta():
     )
 
 
+@blueprint.route("/county/all", methods=["GET"])
+def all_counties():
+    result = app.gis.query.get_all_counties(spatial_db=get_spatial_db())
+    return {"results": result.to_dict("records")}
+
+
 @blueprint.route("/county/mbr", methods=["POST"])
 def county_mbr():
     mbr = request.get_json()

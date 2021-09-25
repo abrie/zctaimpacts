@@ -1,4 +1,5 @@
 import json
+import pandas
 
 
 def get_zctas_intersecting_mbr(*, spatial_db, mbr):
@@ -68,3 +69,23 @@ def get_counties_intersecting_mbr(*, spatial_db, mbr):
             for row in rows
         ]
     }
+
+
+def get_all_counties(*, spatial_db):
+    sql = """
+    SELECT
+      cast(county_geojson.STATEFP as INTEGER) as STATEFP,
+      cast(county_geojson.COUNTYFP as INTEGER) as COUNTYFP,
+      cast(county_geojson.GEOID as INTEGER) as GEOID,
+      county_geojson.NAME,
+      county_fips.county_name,
+      county_fips.state_name
+    FROM
+      county_geojson
+      INNER JOIN county_fips ON county_fips.fips = county_geojson.GEOID
+      """
+
+    df = pandas.read_sql_query(sql, spatial_db)
+    df.columns = df.columns.str.lower()
+
+    return df

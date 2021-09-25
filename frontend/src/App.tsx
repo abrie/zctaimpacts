@@ -77,6 +77,7 @@ export default function App() {
       try {
         setShowProgress(true);
         setErrorMessage(undefined);
+        setImpacts(undefined);
         const response = await axios.post<QueryCountyDetailsResponse>(
           "/query/county",
           data

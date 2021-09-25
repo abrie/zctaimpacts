@@ -94,38 +94,42 @@ export default function App() {
     })();
   }, [selectedCounty]);
 
-  return (
-    <div className="container flex flex-col h-screen max-h-screen mx-auto">
-      <div className="flex flex-row flex-grow">
+  function SearchBox(): JSX.Element {
+    return (
+      <div>
         <div>
-          <div>
-            <input
-              type="text"
-              placeholder="County"
-              onChange={(event) => setSearchTerms(event.target.value)}
-              value={searchTerms}
-            ></input>
-          </div>
-          <div id="hits">
-            {hits.map((hit: County) => (
-              <div
-                className="hover:bg-green-400 cursor-pointer"
-                key={hit.geoid}
-                onClick={() => {
-                  selectCounty({ ...hit });
-                }}
-              >
-                {hit.county_name}, {hit.state_name}
-              </div>
-            ))}
-          </div>
+          <input
+            type="text"
+            placeholder="County"
+            onChange={(event) => setSearchTerms(event.target.value)}
+            value={searchTerms}
+          ></input>
         </div>
         <div
-          id="impact-label"
-          className="relative flex flex-col flex-grow-0 w-64 border-l-4 border-gray-200"
+          id="hits"
+          className="overflow-hidden overflow-scroll bg-gray-200 border border-black h-60"
         >
-          <ImpactLabel countyDetails={impacts} />
+          {hits.map((hit: County) => (
+            <div
+              className="cursor-pointer hover:bg-green-400"
+              key={hit.geoid}
+              onClick={() => {
+                selectCounty({ ...hit });
+              }}
+            >
+              {hit.county_name}, {hit.state_name}
+            </div>
+          ))}
         </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="container flex flex-col h-screen max-h-screen mx-auto">
+      <div className="flex flex-col flex-grow">
+        <SearchBox />
+        <ImpactLabel countyDetails={impacts} />
       </div>
       <div className="flex flex-col flex-grow-0 h-6 bg-gray-400 border-t-2 rounded-b-sm border-gray">
         <ProgressBar active={showProgress} />

@@ -15,7 +15,7 @@ export function ImpactLabel({ countyDetails }: ImpactLabelParams): JSX.Element {
     return <></>;
   }
   return (
-    <div className="absolute inset-0 overflow-hidden overflow-scroll">
+    <div className="inset-0">
       <div className="flex flex-col m-2 p-2 bg-white border-4 border-black">
         <div className="text-xs font-light pb-1">Community/Region Profile</div>
         <div className="text-lg font-extrabold border-b-8 pb-3 border-black">

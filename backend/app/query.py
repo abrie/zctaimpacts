@@ -32,11 +32,51 @@ class InvalidAPIUsage(Exception):
 blueprint = Blueprint("query", __name__, url_prefix="/query")
 
 
-@blueprint.cli.command("get_crosswalk_matrix")
-# @click.argument('name')
-def get_crosswalk_matrix():
+def sector_crosswalk():
     matrices = app.useeio.query.get_matrices()
-    print(json.dumps(matrices["SectorCrosswalk"].to_dict("records")))
+    return matrices["SectorCrosswalk"]
+
+
+def all_counties():
+    return app.gis.query.get_all_counties(spatial_db=get_spatial_db())
+
+
+def industries_by_county(*, statefp, countyfp):
+    return app.cbp.query.get_industries_by_county(
+        base_url=current_app.config["CENSUS_BASE_URL"],
+        api_key=current_app.config["CENSUS_API_KEY"],
+        statefp=statefp,
+        countyfp=countyfp,
+    )
+
+
+@blueprint.cli.command("get_industries_by_county")
+@click.argument("state")
+@click.argument("county")
+def command_industries_by_county(state, county):
+    industries = industries_by_county(statefp=int(state), countyfp=int(county))
+    crosswalk = sector_crosswalk()
+    merged = industries.merge(crosswalk, left_on="NAICS2017_CODE", right_on="NAICS")
+    print(industries.shape[0])
+    print(merged.shape[0])
+    print(merged[merged.duplicated(subset=["NAICS2017_CODE"])])
+
+
+@blueprint.cli.command("get_sector_crosswalk")
+# @click.argument('name')
+def command_get_sector_crosswalk():
+    print(json.dumps(sector_crosswalk().to_dict("records")))
+
+
+@blueprint.cli.command("get_all_counties")
+def command_get_all_counties():
+    print(json.dumps(all_counties().to_dict("records")))
+
+
+@blueprint.route("/county/all", methods=["GET"])
+def route_get_all_counties():
+    current_app.logger.info("Request for all counties.")
+    return {"results": all_counties().to_dict("records")}
 
 
 @blueprint.route("/zcta/mbr", methods=["POST"])
@@ -61,13 +101,6 @@ def zcta():
     return app.gis.query.get_zctas_intersecting_mbr(
         spatial_db=get_spatial_db(), mbr=mbr
     )
-
-
-@blueprint.route("/county/all", methods=["GET"])
-def all_counties():
-    current_app.logger.info("Request for all counties.")
-    result = app.gis.query.get_all_counties(spatial_db=get_spatial_db())
-    return {"results": result.to_dict("records")}
 
 
 @blueprint.route("/county/mbr", methods=["POST"])

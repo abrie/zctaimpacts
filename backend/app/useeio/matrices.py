@@ -14,9 +14,7 @@ def load_matrices() -> dict:
                 # "B": pandas.read_excel(xls, "B", header=0, index_col=0),
                 # "C": pandas.read_excel(xls, "C", header=0, index_col=0),
                 "D": pandas.read_excel(xls, "D", header=0, index_col=0),
-                "SectorCrosswalk": pandas.read_excel(
-                    xls, "SectorCrosswalk", header=0
-                )
+                "SectorCrosswalk": pandas.read_excel(xls, "SectorCrosswalk", header=0)
                 # "L": pandas.read_excel(xls, "L", header=0, index_col=0),
                 # "LCI": pandas.read_excel(xls, "LCI", header=0, index_col=0),
                 # "U": pandas.read_excel(xls, "U", header=0, index_col=0),

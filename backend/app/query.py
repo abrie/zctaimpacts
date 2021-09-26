@@ -1,5 +1,7 @@
+import click
 import pandas
 import jsonschema
+import json
 from flask import Blueprint, request, current_app
 
 
@@ -28,6 +30,13 @@ class InvalidAPIUsage(Exception):
 
 
 blueprint = Blueprint("query", __name__, url_prefix="/query")
+
+
+@blueprint.cli.command("get_crosswalk_matrix")
+# @click.argument('name')
+def get_crosswalk_matrix():
+    matrices = app.useeio.query.get_matrices()
+    print(json.dumps(matrices["SectorCrosswalk"].to_dict("records")))
 
 
 @blueprint.route("/zcta/mbr", methods=["POST"])

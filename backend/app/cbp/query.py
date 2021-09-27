@@ -30,7 +30,7 @@ def get_industries_by_county(*, base_url, api_key, statefp, countyfp):
     response = requests.get(
         urljoin([base_url, "2019", "cbp"]),
         params={
-            "get": ",".join(["NAICS2017", "PAYANN", "EMP"]),
+            "get": ",".join(["NAICS2017", "PAYANN", "EMP", "ESTAB"]),
             "for": f"county:{countyfp:03d}",
             "in": f"state:{statefp:02d}",
             "key": api_key,
@@ -45,7 +45,12 @@ def get_industries_by_county(*, base_url, api_key, statefp, countyfp):
 
     rows = [
         pandas.DataFrame(
-            data={"NAICS2017_CODE": [d[0]], "PAYANN": [int(d[1])], "EMP": [int(d[2])]}
+            data={
+                "NAICS2017_CODE": [d[0]],
+                "PAYANN": [int(d[1])],
+                "EMP": [int(d[2])],
+                "ESTAB": [int(d[3])],
+            }
         )
         for d in data
         if len(d[0]) == 6

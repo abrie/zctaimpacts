@@ -32,12 +32,19 @@ class InvalidAPIUsage(Exception):
 blueprint = Blueprint("query", __name__, url_prefix="/query")
 
 
-def sector_crosswalk():
+def get_sector_crosswalk():
     matrices = app.useeio.query.get_matrices()
     return matrices["SectorCrosswalk"]
 
 
-def all_counties():
+def get_direct_impacts_matrix():
+    matrices = app.useeio.query.get_matrices()
+    D = matrices["D"]
+    D.columns = D.columns.str.rstrip("/US")
+    return D
+
+
+def get_all_counties():
     return app.gis.query.get_all_counties(spatial_db=get_spatial_db())
 
 
@@ -49,34 +56,48 @@ def industries_by_county(*, statefp, countyfp):
         countyfp=countyfp,
     )
 
+@blueprint.cli.command("industries_by_county")
+@click.argument("state")
+@click.argument("county")
+def print_industries_by_county(state, county):
+    industries = industries_by_county(statefp=int(state), countyfp=int(county))
+    print(industries.to_html())
 
-@blueprint.cli.command("get_industries_by_county")
+@blueprint.cli.command("direct_impacts_matrix")
+def print_direct_impacts_matrix():
+    print(get_direct_impacts_matrix().transpose())
+
+
+@blueprint.cli.command("direct_industry_impacts_by_county")
 @click.argument("state")
 @click.argument("county")
 def command_industries_by_county(state, county):
     industries = industries_by_county(statefp=int(state), countyfp=int(county))
-    crosswalk = sector_crosswalk()
-    merged = industries.merge(crosswalk, left_on="NAICS2017_CODE", right_on="NAICS")
-    print(industries.shape[0])
-    print(merged.shape[0])
-    print(merged[merged.duplicated(subset=["NAICS2017_CODE"])])
+    crosswalk = get_sector_crosswalk()
+    industries = industries.merge(crosswalk, left_on="NAICS2017_CODE", right_on="NAICS")
+    D_transposed = get_direct_impacts_matrix().transpose()
+    industries = industries.merge(D_transposed, left_on="BEA_Detail", right_index=True)
+    # print(industries.shape[0])
+    # print(merged.shape[0])
+    # print(merged[merged.duplicated(subset=["NAICS2017_CODE"])])
+    print(industries.to_html())
 
 
-@blueprint.cli.command("get_sector_crosswalk")
+@blueprint.cli.command("sector_crosswalk")
 # @click.argument('name')
-def command_get_sector_crosswalk():
-    print(json.dumps(sector_crosswalk().to_dict("records")))
+def print_sector_crosswalk():
+    print(json.dumps(get_sector_crosswalk().to_dict("records")))
 
 
-@blueprint.cli.command("get_all_counties")
-def command_get_all_counties():
-    print(json.dumps(all_counties().to_dict("records")))
+@blueprint.cli.command("all_counties")
+def print_all_counties():
+    print(json.dumps(get_all_counties().to_dict("records")))
 
 
 @blueprint.route("/county/all", methods=["GET"])
-def route_get_all_counties():
+def serve_get_all_counties():
     current_app.logger.info("Request for all counties.")
-    return {"results": all_counties().to_dict("records")}
+    return {"results": get_all_counties().to_dict("records")}
 
 
 @blueprint.route("/zcta/mbr", methods=["POST"])

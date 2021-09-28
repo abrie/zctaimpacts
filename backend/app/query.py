@@ -3,6 +3,8 @@ import pandas
 import jsonschema
 import json
 from flask import Blueprint, request, current_app
+from itertools import combinations_with_replacement
+import statistics
 
 
 import app.gis.query
@@ -56,12 +58,44 @@ def industries_by_county(*, statefp, countyfp):
         countyfp=countyfp,
     )
 
+
+def direct_industry_impacts_by_county(state, county):
+    industries = industries_by_county(statefp=int(state), countyfp=int(county))
+    crosswalk = get_sector_crosswalk()
+    industries = industries.merge(crosswalk, left_on="NAICS2017", right_on="NAICS")
+    impacts = get_direct_impacts_matrix().transpose()
+    industries = industries.merge(impacts, left_on="BEA_Detail", right_index=True)
+    grouped = industries.groupby("NAICS2017", as_index=False)
+
+    aggregate_default = {x: "first" for x in industries.columns}
+    aggregate_as_set = {x: lambda ser: set(ser) for x in impacts.columns}
+    aggregation_operations = aggregate_default | aggregate_as_set
+    aggregation_operations["BEA_Detail"] = lambda ser:list(set(ser)) #type: ignore
+    aggregated = grouped.agg(aggregation_operations)
+
+    def mean_of_combinations(row, col):
+        return statistics.mean(
+            [
+                sum(list(x))
+                for x in combinations_with_replacement(row[col], int(row["ESTAB"]))
+            ]
+        )
+
+    for impact in impacts.columns:
+        aggregated[impact] = aggregated.apply(
+            lambda row: mean_of_combinations(row, impact), axis=1
+        )
+
+    return aggregated
+
+
 @blueprint.cli.command("industries_by_county")
 @click.argument("state")
 @click.argument("county")
 def print_industries_by_county(state, county):
     industries = industries_by_county(statefp=int(state), countyfp=int(county))
     print(industries.to_html())
+
 
 @blueprint.cli.command("direct_impacts_matrix")
 def print_direct_impacts_matrix():
@@ -71,16 +105,8 @@ def print_direct_impacts_matrix():
 @blueprint.cli.command("direct_industry_impacts_by_county")
 @click.argument("state")
 @click.argument("county")
-def command_industries_by_county(state, county):
-    industries = industries_by_county(statefp=int(state), countyfp=int(county))
-    crosswalk = get_sector_crosswalk()
-    industries = industries.merge(crosswalk, left_on="NAICS2017_CODE", right_on="NAICS")
-    D_transposed = get_direct_impacts_matrix().transpose()
-    industries = industries.merge(D_transposed, left_on="BEA_Detail", right_index=True)
-    # print(industries.shape[0])
-    # print(merged.shape[0])
-    # print(merged[merged.duplicated(subset=["NAICS2017_CODE"])])
-    print(industries.to_html())
+def print_direct_industry_impacts_by_county(state, county):
+    print(direct_industry_impacts_by_county(state, county).to_html())
 
 
 @blueprint.cli.command("sector_crosswalk")
@@ -169,60 +195,6 @@ def get_beacodes_by_zipcode(zipcode) -> pandas.DataFrame:
     return df
 
 
-def get_industries_by_county(*, statefp, countyfp) -> pandas.DataFrame:
-    industries = app.cbp.query.get_industries_by_county(
-        base_url=current_app.config["CENSUS_BASE_URL"],
-        api_key=current_app.config["CENSUS_API_KEY"],
-        statefp=statefp,
-        countyfp=countyfp,
-    )
-
-    industries["BEA_CODE"] = industries.apply(
-        lambda row: app.bea.query.get_beacode_from_naics2017(
-            db=get_db(), naics2017_code=row["NAICS2017_CODE"]
-        ),
-        axis=1,
-    )
-
-    industries["REVENUE"] = industries.apply(lambda row: row["EMP"] * 1e5, axis=1)
-
-    sectors = app.useeio.query.get_all_sectors(
-        base_url=current_app.config["USEEIO_BASE_URL"],
-        api_key=current_app.config["USEEIO_API_KEY"],
-    )
-
-    industries = industries.merge(right=sectors, left_on="BEA_CODE", right_on="code")
-
-    industries["TOTAL_PAYROLL"] = industries.groupby(["id"])["PAYANN"].transform("sum")
-    industries["TOTAL_REVENUE"] = industries.groupby(["id"])["REVENUE"].transform("sum")
-    industries["TOTAL_EMPLOYEES"] = industries.groupby(["id"])["EMP"].transform("sum")
-    industries["TOTAL_ESTABLISHMENTS"] = industries.groupby(["id"])["id"].transform(
-        "count"
-    )
-    industries = industries.drop(
-        columns=[
-            "NAICS2017_CODE",
-            "PAYANN",
-            "EMP",
-            "REVENUE",
-            "code",
-            "location",
-            "index",
-            "description",
-        ]
-    )
-    if industries is None:
-        raise AssertionError("Unexpectedly removed all columns!")
-    industries = industries.drop_duplicates()
-    if industries is None:
-        raise AssertionError("Unexpectedly dropped everything as duplicates.")
-
-    D_transposed = app.useeio.query.get_matrices()["D"].transpose()
-    industries = industries.merge(D_transposed, left_on="id", right_index=True)
-
-    return industries
-
-
 @blueprint.route("/zipcode", methods=["POST"])
 def zipcode():
     json_data = request.get_json()
@@ -253,10 +225,10 @@ def zipcode():
     return {"results": filtered.to_dict("records")}
 
 
-@blueprint.route("/county", methods=["POST"])
-def county():
-    json_data = request.get_json()
-    if json_data is None:
+@blueprint.route("/county/impacts", methods=["POST"])
+def serve_industry_impacts_by_county():
+    params = request.get_json()
+    if params is None:
         raise InvalidAPIUsage("No JSON body found.")
 
     schema = {
@@ -268,20 +240,16 @@ def county():
         "required": ["statefp", "countyfp"],
     }
 
-    jsonschema.validate(instance=json_data, schema=schema)
+    jsonschema.validate(instance=params, schema=schema)
 
     current_app.logger.info(
-        f"Request impact data for {json_data['statefp']} {json_data['countyfp']}"
+        f"Request impact data for {params['statefp']} {params['countyfp']}"
     )
 
-    industries = get_industries_by_county(
-        statefp=json_data["statefp"], countyfp=json_data["countyfp"]
-    )
-
-    totals = compute_total_emissions(industries)
     return {
-        "industries": industries.to_dict("records"),
-        "totals": totals.to_dict("records")[0],
+        "direct_impacts": direct_industry_impacts_by_county(
+            params["statefp"], params["countyfp"]
+        ).to_dict("records"),
     }
 
 

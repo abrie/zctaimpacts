@@ -1,14 +1,14 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
 import { ProgressBar } from "./ProgressBar";
-import { ImpactLabel } from "./ImpactLabel";
+import { ImpactLabel, ImpactLabelParams } from "./ImpactLabel";
 import { SearchInput, SearchHits } from "./SearchControls";
 import lunr from "lunr";
 import {
   County,
-  CountyDetails,
   QueryCountyDetailsResponse,
   QueryCountyResponse,
+  Indicators,
 } from "./Api";
 
 export default function App() {
@@ -21,7 +21,7 @@ export default function App() {
   const [selectedCounty, selectCounty] = useState<County | undefined>(
     undefined
   );
-  const [impacts, setImpacts] = useState<CountyDetails[]>([]);
+  const [impacts, setImpacts] = useState<ImpactLabelParams[]>([]);
   const [errorMessage, setErrorMessage] = useState<string | undefined>(
     undefined
   );
@@ -79,14 +79,14 @@ export default function App() {
         setShowProgress(true);
         setErrorMessage(undefined);
         const response = await axios.post<QueryCountyDetailsResponse>(
-          "/query/county",
+          "/query/county/impacts",
           data
         );
         setShowProgress(false);
         setImpacts((i) => [
           {
             industries: response.data.industries,
-            totals: response.data.totals,
+            indicators: Indicators,
             county: selectedCounty,
           },
           ...i,
@@ -107,8 +107,12 @@ export default function App() {
           hits={hits}
         />
         <ProgressBar active={showProgress} />
-        {impacts.map((impact) => (
-          <ImpactLabel countyDetails={impact} />
+        {impacts.map(({ industries, indicators, county }) => (
+          <ImpactLabel
+            industries={industries}
+            indicators={indicators}
+            county={county}
+          />
         ))}
       </div>
       <div className="flex flex-col flex-grow-0 h-6 bg-gray-400 border-t-2 rounded-b-sm border-gray">

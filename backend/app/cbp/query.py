@@ -44,4 +44,7 @@ def get_industries_by_county(*, base_url, api_key, statefp, countyfp):
         return pandas.DataFrame()
 
     df = pandas.DataFrame.from_records(data[1:], columns=data[0])
-    return df[df["NAICS2017"].str.len() == 6]
+    df = df.astype({"ESTAB": "int32", "EMP": "int32"})
+    df = df[df["NAICS2017"].str.len() == 6]
+
+    return df

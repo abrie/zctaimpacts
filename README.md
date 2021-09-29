@@ -1,10 +1,11 @@
 # ZCTA Impacts
 
-A project for the [2021 Sustainable Communities Web Challenge](https://model.earth/community/challenge/). This entry displays environmental impact information at county and zipcode level.
+A project for the [2021 Sustainable Communities Web Challenge](https://model.earth/community/challenge/).
+Generates Enviromental ("Nutrition Labels")[https://model.earth/io/template/] for communities in the USA.
 
 ## Live Site
 
-https://zctaimpacts.abrie.dev
+The CI process publishes new builds to: https://zctaimpacts.abrie.dev
 
 ## Documentation
 

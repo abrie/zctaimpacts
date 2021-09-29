@@ -1,9 +1,9 @@
 import click
+import random
 import pandas
 import jsonschema
 import json
 from flask import Blueprint, request, current_app
-from itertools import combinations_with_replacement
 import statistics
 
 
@@ -39,6 +39,11 @@ def get_sector_crosswalk():
     return matrices["SectorCrosswalk"]
 
 
+def get_indicators_matrix():
+    matrices = app.useeio.query.get_matrices()
+    return matrices["indicators"]
+
+
 def get_direct_impacts_matrix():
     matrices = app.useeio.query.get_matrices()
     D = matrices["D"]
@@ -60,33 +65,46 @@ def industries_by_county(*, statefp, countyfp):
 
 
 def direct_industry_impacts_by_county(state, county):
+    current_app.logger.info(f"Computing impact data for {state} {county}")
     industries = industries_by_county(statefp=int(state), countyfp=int(county))
     crosswalk = get_sector_crosswalk()
     industries = industries.merge(crosswalk, left_on="NAICS2017", right_on="NAICS")
     impacts = get_direct_impacts_matrix().transpose()
+    current_app.logger.info(f"Merging {state} {county}")
     industries = industries.merge(impacts, left_on="BEA_Detail", right_index=True)
+    current_app.logger.info(f"Grouping {state} {county}")
     grouped = industries.groupby("NAICS2017", as_index=False)
 
     aggregate_default = {x: "first" for x in industries.columns}
     aggregate_as_set = {x: lambda ser: set(ser) for x in impacts.columns}
     aggregation_operations = aggregate_default | aggregate_as_set
-    aggregation_operations["BEA_Detail"] = lambda ser:list(set(ser)) #type: ignore
+    aggregation_operations["BEA_Detail"] = lambda ser: list(set(ser))  # type: ignore
+    current_app.logger.info(f"Aggregatting {state} {county}")
     aggregated = grouped.agg(aggregation_operations)
 
     def mean_of_combinations(row, col):
-        return statistics.mean(
-            [
-                sum(list(x))
-                for x in combinations_with_replacement(row[col], int(row["ESTAB"]))
-            ]
-        )
+        population = list(row[col])
+        if len(population) == 1:
+            return population[0]
+
+        k = row["ESTAB"]
+        samples = [sum(random.choices(population, k=k)) for _ in range(0, 100)]
+        return statistics.mean(samples)
 
     for impact in impacts.columns:
         aggregated[impact] = aggregated.apply(
             lambda row: mean_of_combinations(row, impact), axis=1
         )
 
+    current_app.logger.info(f"Done {state} {county}")
+
     return aggregated
+
+
+@blueprint.cli.command("indicators")
+def print_indicators():
+    indicators = get_indicators_matrix()
+    print(indicators.to_html())
 
 
 @blueprint.cli.command("industries_by_county")
@@ -225,6 +243,12 @@ def zipcode():
     return {"results": filtered.to_dict("records")}
 
 
+@blueprint.route("/indicators", methods=["GET"])
+def serve_indicators():
+    indicators = get_indicators_matrix()
+    return {"indicators": indicators.to_dict("records")}
+
+
 @blueprint.route("/county/impacts", methods=["POST"])
 def serve_industry_impacts_by_county():
     params = request.get_json()
@@ -243,13 +267,19 @@ def serve_industry_impacts_by_county():
     jsonschema.validate(instance=params, schema=schema)
 
     current_app.logger.info(
-        f"Request impact data for {params['statefp']} {params['countyfp']}"
+        f"Processing request for impact data for {params['statefp']} {params['countyfp']}"
+    )
+
+    industries = direct_industry_impacts_by_county(
+        params["statefp"], params["countyfp"]
+    )
+
+    current_app.logger.info(
+        f"Computed impact data for {params['statefp']} {params['countyfp']}"
     )
 
     return {
-        "direct_impacts": direct_industry_impacts_by_county(
-            params["statefp"], params["countyfp"]
-        ).to_dict("records"),
+        "industries": industries.to_dict("records"),
     }
 
 

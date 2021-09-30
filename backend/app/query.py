@@ -64,22 +64,21 @@ def industries_by_county(*, statefp, countyfp):
     )
 
 
-def direct_industry_impacts_by_county(state, county):
-    current_app.logger.info(f"Computing impact data for {state} {county}")
+def direct_industry_impacts_by_county(state, county, sample_size):
+    current_app.logger.info(
+        f"Collecting direct industry impact data for state/{state}/county/{county}"
+    )
     industries = industries_by_county(statefp=int(state), countyfp=int(county))
     crosswalk = get_sector_crosswalk()
     industries = industries.merge(crosswalk, left_on="NAICS2017", right_on="NAICS")
     impacts = get_direct_impacts_matrix().transpose()
-    current_app.logger.info(f"Merging {state} {county}")
     industries = industries.merge(impacts, left_on="BEA_Detail", right_index=True)
-    current_app.logger.info(f"Grouping {state} {county}")
     grouped = industries.groupby("NAICS2017", as_index=False)
 
     aggregate_default = {x: "first" for x in industries.columns}
     aggregate_as_set = {x: lambda ser: set(ser) for x in impacts.columns}
     aggregation_operations = aggregate_default | aggregate_as_set
     aggregation_operations["BEA_Detail"] = lambda ser: list(set(ser))  # type: ignore
-    current_app.logger.info(f"Aggregatting {state} {county}")
     aggregated = grouped.agg(aggregation_operations)
 
     def mean_of_combinations(row, col):
@@ -88,7 +87,7 @@ def direct_industry_impacts_by_county(state, county):
             return population[0]
 
         k = row["ESTAB"]
-        samples = [sum(random.choices(population, k=k)) for _ in range(0, 100)]
+        samples = [sum(random.choices(population, k=k)) for _ in range(0, sample_size)]
         return statistics.mean(samples)
 
     for impact in impacts.columns:
@@ -107,6 +106,12 @@ def print_indicators():
     print(indicators.to_html())
 
 
+@blueprint.route("/indicators", methods=["GET"])
+def serve_indicators():
+    indicators = get_indicators_matrix()
+    return {"indicators": indicators.to_dict("records")}
+
+
 @blueprint.cli.command("industries_by_county")
 @click.argument("state")
 @click.argument("county")
@@ -123,8 +128,9 @@ def print_direct_impacts_matrix():
 @blueprint.cli.command("direct_industry_impacts_by_county")
 @click.argument("state")
 @click.argument("county")
-def print_direct_industry_impacts_by_county(state, county):
-    print(direct_industry_impacts_by_county(state, county).to_html())
+@click.argument("--sample_size", default=100)
+def print_direct_industry_impacts_by_county(state, county, sample_size):
+    print(direct_industry_impacts_by_county(state, county, sample_size).to_html())
 
 
 @blueprint.cli.command("sector_crosswalk")
@@ -194,61 +200,6 @@ def county_mbr():
     return result
 
 
-def get_beacodes_by_zipcode(zipcode) -> pandas.DataFrame:
-    codes = app.cbp.query.get_naics_by_zipcode(
-        base_url=current_app.config["CENSUS_BASE_URL"],
-        api_key=current_app.config["CENSUS_API_KEY"],
-        zipcode=zipcode,
-    )
-
-    df = pandas.DataFrame(
-        [
-            app.bea.query.get_beacode_from_naics2017(db=get_db(), naics2017_code=code)
-            for code in codes
-        ]
-    )
-
-    df["COUNT"] = df.groupby(["BEA_CODE"])["BEA_CODE"].transform("size")
-    df.drop_duplicates("BEA_CODE", inplace=True)
-    return df
-
-
-@blueprint.route("/zipcode", methods=["POST"])
-def zipcode():
-    json_data = request.get_json()
-    if json_data is None:
-        raise InvalidAPIUsage("No JSON body found.")
-
-    schema = {
-        "type": "object",
-        "properties": {
-            "zipcode": {"type": "string"},
-            "name": {"type": "string"},
-        },
-        "required": ["zipcode"],
-    }
-
-    jsonschema.validate(instance=json_data, schema=schema)
-
-    df_1 = get_beacodes_by_zipcode(json_data["zipcode"])
-
-    df_2 = app.useeio.query.get_all_sectors(
-        base_url=current_app.config["USEEIO_BASE_URL"],
-        api_key=current_app.config["USEEIO_API_KEY"],
-    )
-
-    df = pandas.merge(left=df_1, right=df_2, left_on="BEA_CODE", right_on="code")
-    matrices = app.useeio.query.get_matrices()
-    filtered = matrices["D"].filter(items=df["id"], axis="columns")
-    return {"results": filtered.to_dict("records")}
-
-
-@blueprint.route("/indicators", methods=["GET"])
-def serve_indicators():
-    indicators = get_indicators_matrix()
-    return {"indicators": indicators.to_dict("records")}
-
-
 @blueprint.route("/county/impacts", methods=["POST"])
 def serve_industry_impacts_by_county():
     params = request.get_json()
@@ -260,8 +211,9 @@ def serve_industry_impacts_by_county():
         "properties": {
             "statefp": {"type": "number"},
             "countyfp": {"type": "number"},
+            "sampleSize": {"type": "number"},
         },
-        "required": ["statefp", "countyfp"],
+        "required": ["statefp", "countyfp", "sampleSize"],
     }
 
     jsonschema.validate(instance=params, schema=schema)
@@ -271,7 +223,7 @@ def serve_industry_impacts_by_county():
     )
 
     industries = direct_industry_impacts_by_county(
-        params["statefp"], params["countyfp"]
+        params["statefp"], params["countyfp"], params["sampleSize"]
     )
 
     current_app.logger.info(
@@ -281,91 +233,3 @@ def serve_industry_impacts_by_county():
     return {
         "industries": industries.to_dict("records"),
     }
-
-
-def compute_total_emissions(industries):
-    columns = app.useeio.query.get_matrices()["D"].index.to_list()
-    data = industries[columns].sum()
-    return pandas.DataFrame(data=[data], columns=columns)
-
-
-@blueprint.route("/naics", methods=["POST"])
-def naics():
-    json_data = request.get_json()
-    if json_data is None:
-        raise InvalidAPIUsage("No JSON body found.")
-
-    schema = {
-        "type": "object",
-        "properties": {
-            "zipcode": {"type": "string"},
-            "name": {"type": "string"},
-        },
-        "required": ["zipcode"],
-    }
-
-    jsonschema.validate(instance=json_data, schema=schema)
-
-    results = app.cbp.query.get_naics_by_zipcode(
-        base_url=current_app.config["CENSUS_BASE_URL"],
-        api_key=current_app.config["CENSUS_API_KEY"],
-        zipcode=json_data["zipcode"],
-    )
-    return {"results": results}
-
-
-@blueprint.route("/bea/naics2007", methods=["POST"])
-def bea_naics2007():
-    json_data = request.get_json()
-    if json_data is None:
-        raise InvalidAPIUsage("No JSON body found.")
-
-    schema = {
-        "type": "object",
-        "properties": {
-            "naics2007_code": {"type": "string"},
-            "name": {"type": "string"},
-        },
-        "required": ["naics2007_code"],
-    }
-
-    jsonschema.validate(instance=json_data, schema=schema)
-
-    results = app.bea.query.get_beacode_from_naics2007(
-        db=get_db(), naics2007_code=json_data["naics2007_code"]
-    )
-
-    return {"results": results}
-
-
-@blueprint.route("/bea/naics2017", methods=["POST"])
-def bea_naics2017():
-    json_data = request.get_json()
-    if json_data is None:
-        raise InvalidAPIUsage("No JSON body found.")
-
-    schema = {
-        "type": "object",
-        "properties": {
-            "naics2007_code": {"type": "string"},
-            "name": {"type": "string"},
-        },
-        "required": ["naics2007_code"],
-    }
-
-    jsonschema.validate(instance=json_data, schema=schema)
-
-    results = app.bea.query.get_beacode_from_naics2017(
-        db=get_db(), naics2017_code=json_data["naics2017_code"]
-    )
-
-    return {"results": results}
-
-
-@blueprint.route("/useeio/sectors", methods=["POST"])
-def useeio():
-    df = app.useeio.query.get_all_sectors(
-        base_url=current_app.config["USEEIO_BASE_URL"],
-        api_key=current_app.config["USEEIO_API_KEY"],
-    )
-    return {"results": df.to_dict("records")}

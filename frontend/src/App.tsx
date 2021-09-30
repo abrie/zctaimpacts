@@ -48,6 +48,7 @@ export default function App() {
     const data = {
       statefp: county.statefp,
       countyfp: county.countyfp,
+      sampleSize: 50,
     };
 
     try {

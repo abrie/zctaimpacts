@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
 import { ProgressBar } from "./ProgressBar";
-import { Footer } from "./Footer";
+import { Header } from "./HeaderFooter";
 import { ImpactLabel, ImpactLabelParams } from "./ImpactLabel";
 import {
   SearchInput,
@@ -74,7 +74,7 @@ export default function App() {
 
   return (
     <div className="p-1 container flex flex-col h-screen max-h-screen mx-auto">
-      <Footer errorMessage={errorMessage} />
+      <Header errorMessage={errorMessage} />
       <div className="flex flex-col flex-grow">
         <SearchInput setSearchTerms={(terms) => setSearchTerms(terms)} />
         <SearchHits

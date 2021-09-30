@@ -1,7 +1,7 @@
 # ZCTA Impacts
 
 A project for the [2021 Sustainable Communities Web Challenge](https://model.earth/community/challenge/).
-Generates Enviromental ("Nutrition Labels")[https://model.earth/io/template/] for communities in the USA.
+Generates Enviromental ["Nutrition Labels"](https://model.earth/io/template/) for communities in the USA.
 
 ## Live Site
 

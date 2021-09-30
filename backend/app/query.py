@@ -9,7 +9,6 @@ import statistics
 
 import app.gis.query
 import app.cbp.query
-import app.bea.query
 import app.useeio.query
 from app.db import get_spatial_db
 from app.db import get_db

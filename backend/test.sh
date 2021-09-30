@@ -5,7 +5,8 @@ HOST=http://localhost:5000
 
 #curl -X POST -H "Content-Type: application/json" -d '{"zipcode":"30309"}' http://localhost:5000/query/naics
 
-curl -X POST -H "Content-Type: application/json" -d '{"zipcode":"90210"}' http://localhost:5000/query/zipcode
+#curl -X POST -H "Content-Type: application/json" -d '{"zipcode":"90210"}' http://localhost:5000/query/zipcode
+curl -X POST -H "Content-Type: application/json" -d '{"statefp":17,"countyfp":31}' http://localhost:5000/query/county/impacts
 
 #curl -X POST -H "Content-Type: application/json" -d '{}' http://localhost:5000/query/useeio/sectors
 

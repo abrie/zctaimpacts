@@ -7,23 +7,27 @@ def urljoin(parts):
 
 
 # https://api.census.gov/data/2019/cbp/variables.html
-def get_naics_by_zipcode(*, base_url, api_key, zipcode):
-    data = requests.get(
+def get_industries_by_zipcode(*, base_url, api_key, zipcode):
+    response = requests.get(
         urljoin([base_url, "2019", "cbp"]),
         params={
-            "get": ",".join(["NAICS2017"]),
+            "get": ",".join(["NAICS2017", "EMP", "ESTAB"]),
             "for": f"zipcode:{zipcode}",
             "key": api_key,
         },
-    ).json()
+    )
 
-    results = []
-    for d in data:
-        code = d[0]
-        if len(code) == 6:
-            results.append(code)
+    try:
+        data = response.json()
+    except ValueError:
+        print("Unable to parse county response as json. Returning empty DataFrame.")
+        return pandas.DataFrame()
 
-    return results
+    df = pandas.DataFrame.from_records(data[1:], columns=data[0])
+    df = df.astype({"ESTAB": "int32", "EMP": "int32"})
+    df = df[df["NAICS2017"].str.len() == 6]
+
+    return df
 
 
 def get_industries_by_county(*, base_url, api_key, statefp, countyfp):

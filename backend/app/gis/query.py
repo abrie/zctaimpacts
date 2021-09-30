@@ -71,6 +71,21 @@ def get_counties_intersecting_mbr(*, spatial_db, mbr):
     }
 
 
+def get_all_zipcodes(*, spatial_db):
+    sql = """
+    SELECT
+        ZCTA5CE20 as zipcode,
+        GEOID20 as geoid
+    FROM
+        zcta_geojson
+      """
+
+    df = pandas.read_sql_query(sql, spatial_db)
+    df.columns = df.columns.str.lower()
+
+    return df
+
+
 def get_all_counties(*, spatial_db):
     sql = """
     SELECT

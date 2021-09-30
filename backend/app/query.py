@@ -1,6 +1,5 @@
 import click
 import random
-import pandas
 import jsonschema
 import json
 from flask import Blueprint, request, current_app
@@ -11,7 +10,6 @@ import app.gis.query
 import app.cbp.query
 import app.useeio.query
 from app.db import get_spatial_db
-from app.db import get_db
 
 
 class InvalidAPIUsage(Exception):
@@ -54,6 +52,10 @@ def get_all_counties():
     return app.gis.query.get_all_counties(spatial_db=get_spatial_db())
 
 
+def get_all_zipcodes():
+    return app.gis.query.get_all_zipcodes(spatial_db=get_spatial_db())
+
+
 def industries_by_county(*, statefp, countyfp):
     return app.cbp.query.get_industries_by_county(
         base_url=current_app.config["CENSUS_BASE_URL"],
@@ -61,6 +63,50 @@ def industries_by_county(*, statefp, countyfp):
         statefp=statefp,
         countyfp=countyfp,
     )
+
+
+def industries_by_zipcode(*, zipcode):
+    return app.cbp.query.get_industries_by_zipcode(
+        base_url=current_app.config["CENSUS_BASE_URL"],
+        api_key=current_app.config["CENSUS_API_KEY"],
+        zipcode=zipcode,
+    )
+
+
+def direct_industry_impacts_by_zipcode(*, zipcode, sample_size):
+    current_app.logger.info(
+        f"Collecting direct industry impact data for zipcode/{zipcode}"
+    )
+    industries = industries_by_zipcode(zipcode=zipcode)
+    crosswalk = get_sector_crosswalk()
+    industries = industries.merge(crosswalk, left_on="NAICS2017", right_on="NAICS")
+    impacts = get_direct_impacts_matrix().transpose()
+    industries = industries.merge(impacts, left_on="BEA_Detail", right_index=True)
+    grouped = industries.groupby("NAICS2017", as_index=False)
+
+    aggregate_default = {x: "first" for x in industries.columns}
+    aggregate_as_set = {x: lambda ser: set(ser) for x in impacts.columns}
+    aggregation_operations = aggregate_default | aggregate_as_set
+    aggregation_operations["BEA_Detail"] = lambda ser: list(set(ser))  # type: ignore
+    aggregated = grouped.agg(aggregation_operations)
+
+    def mean_of_combinations(row, col):
+        population = list(row[col])
+        if len(population) == 1:
+            return population[0]
+
+        k = row["ESTAB"]
+        samples = [sum(random.choices(population, k=k)) for _ in range(0, sample_size)]
+        return statistics.mean(samples)
+
+    for impact in impacts.columns:
+        aggregated[impact] = aggregated.apply(
+            lambda row: mean_of_combinations(row, impact), axis=1
+        )
+
+    current_app.logger.info(f"Done zipcode/{zipcode}")
+
+    return aggregated
 
 
 def direct_industry_impacts_by_county(state, county, sample_size):
@@ -119,6 +165,13 @@ def print_industries_by_county(state, county):
     print(industries.to_html())
 
 
+@blueprint.cli.command("industries_by_zipcode")
+@click.argument("zipcode")
+def print_industries_by_zipcode(zipcode):
+    industries = industries_by_zipcode(zipcode=zipcode)
+    print(industries.to_html())
+
+
 @blueprint.cli.command("direct_impacts_matrix")
 def print_direct_impacts_matrix():
     print(get_direct_impacts_matrix().transpose())
@@ -127,9 +180,20 @@ def print_direct_impacts_matrix():
 @blueprint.cli.command("direct_industry_impacts_by_county")
 @click.argument("state")
 @click.argument("county")
-@click.argument("--sample_size", default=100)
+@click.option("--sample_size", default=100)
 def print_direct_industry_impacts_by_county(state, county, sample_size):
     print(direct_industry_impacts_by_county(state, county, sample_size).to_html())
+
+
+@blueprint.cli.command("direct_industry_impacts_by_zipcode")
+@click.argument("zipcode")
+@click.option("--sample_size", default=100)
+def print_direct_industry_impacts_by_zipcode(zipcode, sample_size):
+    print(
+        direct_industry_impacts_by_zipcode(
+            zipcode=zipcode, sample_size=sample_size
+        ).to_html()
+    )
 
 
 @blueprint.cli.command("sector_crosswalk")
@@ -141,6 +205,11 @@ def print_sector_crosswalk():
 @blueprint.cli.command("all_counties")
 def print_all_counties():
     print(json.dumps(get_all_counties().to_dict("records")))
+
+
+@blueprint.cli.command("all_zipcodes")
+def print_all_zipcodes():
+    print(json.dumps(get_all_zipcodes().to_dict("records")))
 
 
 @blueprint.route("/county/all", methods=["GET"])
@@ -199,8 +268,40 @@ def county_mbr():
     return result
 
 
+@blueprint.route("/zipcode/impacts", methods=["POST"])
+def serve_direct_industry_impacts_by_zipcode():
+    params = request.get_json()
+    if params is None:
+        raise InvalidAPIUsage("No JSON body found.")
+
+    schema = {
+        "type": "object",
+        "properties": {
+            "zipcode": {"type": "string"},
+            "sampleSize": {"type": "number"},
+        },
+        "required": ["zipcode", "sampleSize"],
+    }
+
+    jsonschema.validate(instance=params, schema=schema)
+
+    current_app.logger.info(
+        f"Processing request for impact data for zipcode {params['zipcode']}"
+    )
+
+    industries = direct_industry_impacts_by_zipcode(
+        zipcode=params["zipcode"], sample_size=params["sample_size"]
+    )
+
+    current_app.logger.info(f"Computed impact data for zipcode {params['zipcode']}")
+
+    return {
+        "industries": industries.to_dict("records"),
+    }
+
+
 @blueprint.route("/county/impacts", methods=["POST"])
-def serve_industry_impacts_by_county():
+def serve_direct_industry_impacts_by_county():
     params = request.get_json()
     if params is None:
         raise InvalidAPIUsage("No JSON body found.")

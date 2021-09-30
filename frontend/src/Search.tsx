@@ -1,4 +1,42 @@
 import { County } from "./Api";
+import lunr from "lunr";
+
+export interface CountySearch {
+  index: lunr.Index;
+  lookup: Record<string, County>;
+  search: (terms: string) => County[];
+}
+
+export function buildCountySearch(documents: County[]): CountySearch {
+  const index = buildCountyIndex(documents);
+  const lookup = buildCountyLookup(documents);
+  const search = (terms: string): County[] =>
+    index.search(terms).map(({ ref }) => lookup[ref]);
+
+  return {
+    index,
+    lookup,
+    search,
+  };
+}
+
+function buildCountyIndex(documents: County[]): lunr.Index {
+  return lunr(function (this: lunr.Builder) {
+    this.ref("geoid");
+    this.field("county_name");
+    this.field("state_name");
+
+    documents.forEach(function (this: lunr.Builder, doc) {
+      this.add(doc);
+    }, this);
+  });
+}
+
+function buildCountyLookup(documents: County[]): Record<string, County> {
+  return documents.reduce((acc, county) => {
+    return { ...acc, [county.geoid]: county };
+  }, {});
+}
 
 interface SearchParams {
   setSearchTerms: (terms: string) => void;

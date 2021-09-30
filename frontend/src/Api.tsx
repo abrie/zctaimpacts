@@ -1,4 +1,4 @@
-export interface QueryCountyDetailsResponse {
+export interface QueryCountyImpactsResponse {
   industries: Industry[];
 }
 

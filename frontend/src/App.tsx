@@ -2,8 +2,12 @@ import { useState, useEffect } from "react";
 import axios from "axios";
 import { ProgressBar } from "./ProgressBar";
 import { ImpactLabel, ImpactLabelParams } from "./ImpactLabel";
-import { SearchInput, SearchHits } from "./SearchControls";
-import lunr from "lunr";
+import {
+  SearchInput,
+  SearchHits,
+  buildCountySearch,
+  CountySearch,
+} from "./Search";
 import {
   County,
   QueryCountyDetailsResponse,
@@ -15,9 +19,9 @@ export default function App() {
   const [showProgress, setShowProgress] = useState<boolean>(false);
   const [hits, setHits] = useState<County[]>([]);
   const [searchTerms, setSearchTerms] = useState<string>("");
-  const [countySearch, setCountySearch] = useState<
-    { index: lunr.Index; lookup: Record<string, County> } | undefined
-  >(undefined);
+  const [countySearch, setCountySearch] = useState<CountySearch | undefined>(
+    undefined
+  );
   const [selectedCounty, selectCounty] = useState<County | undefined>(
     undefined
   );
@@ -26,43 +30,19 @@ export default function App() {
     undefined
   );
 
-  function buildCountyIndex(documents: County[]): lunr.Index {
-    return lunr(function (this: lunr.Builder) {
-      this.ref("geoid");
-      this.field("county_name");
-      this.field("state_name");
-
-      documents.forEach(function (this: lunr.Builder, doc) {
-        this.add(doc);
-      }, this);
-    });
-  }
-
-  function buildCountyLookup(documents: County[]): Record<string, County> {
-    return documents.reduce((acc, county) => {
-      return { ...acc, [county.geoid]: county };
-    }, {});
-  }
-
   useEffect(() => {
     (async () => {
       const response = await axios.get<QueryCountyResponse>(
         "/query/county/all"
       );
 
-      const index = buildCountyIndex(response.data.results);
-      const lookup = buildCountyLookup(response.data.results);
-      setCountySearch({ index, lookup });
+      setCountySearch(buildCountySearch(response.data.results));
     })();
   }, []);
 
   useEffect(() => {
     if (countySearch && searchTerms) {
-      setHits(
-        countySearch.index
-          .search(searchTerms)
-          .map(({ ref }) => countySearch.lookup[ref])
-      );
+      setHits(countySearch.search(searchTerms));
     }
   }, [searchTerms, countySearch]);
 

@@ -2,6 +2,10 @@ export interface QueryCountyImpactsResponse {
   industries: Industry[];
 }
 
+export interface QueryZipcodeImpactsResponse {
+  industries: Industry[];
+}
+
 export const Indicators: Indicator[] = [
   {
     Code: "ACID",
@@ -283,6 +287,11 @@ export interface Industry {
   [field: string]: number | string | string[];
 }
 
+export interface Zipcode {
+  zipcode: string;
+  geoid: string;
+}
+
 export interface County {
   statefp: number;
   countyfp: number;
@@ -294,4 +303,8 @@ export interface County {
 
 export interface QueryCountyResponse {
   results: County[];
+}
+
+export interface QueryZipcodeResponse {
+  results: Zipcode[];
 }

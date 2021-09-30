@@ -5,22 +5,32 @@ import { Header } from "./HeaderFooter";
 import { ImpactLabel, ImpactLabelParams } from "./ImpactLabel";
 import {
   SearchInput,
-  SearchHits,
+  CountySearchHits,
+  ZipcodeSearchHits,
   buildCountySearch,
+  buildZipcodeSearch,
   CountySearch,
+  ZipcodeSearch,
 } from "./Search";
 import type {
   County,
+  Zipcode,
   QueryCountyImpactsResponse,
+  QueryZipcodeImpactsResponse,
   QueryCountyResponse,
+  QueryZipcodeResponse,
 } from "./Api";
 import { Indicators } from "./Api";
 
 export default function App() {
   const [showProgress, setShowProgress] = useState<boolean>(false);
-  const [hits, setHits] = useState<County[]>([]);
+  const [countyHits, setCountyHits] = useState<County[]>([]);
+  const [zipcodeHits, setZipcodeHits] = useState<Zipcode[]>([]);
   const [searchTerms, setSearchTerms] = useState<string>("");
   const [countySearch, setCountySearch] = useState<CountySearch | undefined>(
+    undefined
+  );
+  const [zipcodeSearch, setZipcodeSearch] = useState<ZipcodeSearch | undefined>(
     undefined
   );
   const [impacts, setImpacts] = useState<ImpactLabelParams[]>([]);
@@ -39,10 +49,21 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    if (countySearch && searchTerms) {
-      setHits(countySearch.search(searchTerms));
+    (async () => {
+      const response = await axios.get<QueryZipcodeResponse>(
+        "/query/zipcode/all"
+      );
+
+      setZipcodeSearch(buildZipcodeSearch(response.data.results));
+    })();
+  }, []);
+
+  useEffect(() => {
+    if (countySearch && zipcodeSearch && searchTerms) {
+      setCountyHits(countySearch.search(searchTerms));
+      setZipcodeHits(zipcodeSearch.search(searchTerms));
     }
-  }, [searchTerms, countySearch]);
+  }, [searchTerms, countySearch, zipcodeSearch]);
 
   async function loadCountyImpacts(county: County) {
     const data = {
@@ -61,9 +82,39 @@ export default function App() {
       setShowProgress(false);
       setImpacts((i) => [
         {
+          type: "County",
           industries: response.data.industries,
           indicators: Indicators,
           county: county,
+        },
+        ...i,
+      ]);
+    } catch (e: unknown) {
+      setShowProgress(false);
+      setErrorMessage(`${e}`);
+    }
+  }
+
+  async function loadZipcodeImpacts(zipcode: Zipcode) {
+    const data = {
+      zipcode: zipcode.zipcode,
+      sampleSize: 50,
+    };
+
+    try {
+      setShowProgress(true);
+      setErrorMessage(undefined);
+      const response = await axios.post<QueryZipcodeImpactsResponse>(
+        "/query/zipcode/impacts",
+        data
+      );
+      setShowProgress(false);
+      setImpacts((i) => [
+        {
+          type: "Zipcode",
+          industries: response.data.industries,
+          indicators: Indicators,
+          zipcode: zipcode,
         },
         ...i,
       ]);
@@ -78,17 +129,17 @@ export default function App() {
       <Header errorMessage={errorMessage} />
       <div className="flex flex-col flex-grow">
         <SearchInput setSearchTerms={(terms) => setSearchTerms(terms)} />
-        <SearchHits
-          selectCounty={(county) => loadCountyImpacts(county)}
-          hits={hits}
+        <CountySearchHits
+          onSelect={(county) => loadCountyImpacts(county)}
+          hits={countyHits}
+        />
+        <ZipcodeSearchHits
+          onSelect={(zipcode) => loadZipcodeImpacts(zipcode)}
+          hits={zipcodeHits}
         />
         <ProgressBar active={showProgress} />
-        {impacts.map(({ industries, indicators, county }) => (
-          <ImpactLabel
-            industries={industries}
-            indicators={indicators}
-            county={county}
-          />
+        {impacts.map((impactLabelParams: ImpactLabelParams) => (
+          <ImpactLabel {...impactLabelParams} />
         ))}
       </div>
     </div>

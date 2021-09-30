@@ -1,10 +1,22 @@
-import { County, Industry, Indicator } from "./Api";
+import { County, Zipcode, Industry, Indicator } from "./Api";
 
-export interface ImpactLabelParams {
+export interface CountyImpactLabelParams {
+  type: "County";
   county: County;
   industries: Industry[];
   indicators: Indicator[];
 }
+
+export interface ZipcodeImpactLabelParams {
+  type: "Zipcode";
+  zipcode: Zipcode;
+  industries: Industry[];
+  indicators: Indicator[];
+}
+
+export type ImpactLabelParams =
+  | CountyImpactLabelParams
+  | ZipcodeImpactLabelParams;
 
 interface ImpactLineParams {
   label: string;
@@ -12,11 +24,53 @@ interface ImpactLineParams {
   value: number | string;
 }
 
-export function ImpactLabel({
+export function ImpactLabel(impactLabelParams: ImpactLabelParams): JSX.Element {
+  switch (impactLabelParams.type) {
+    case "County":
+      return CountyImpactLabel(impactLabelParams);
+    case "Zipcode":
+      return ZipcodeImpactLabel(impactLabelParams);
+  }
+}
+
+export function ZipcodeImpactLabel({
+  zipcode,
+  industries,
+  indicators,
+}: ZipcodeImpactLabelParams): JSX.Element {
+  const totals: { indicator: Indicator; total: number }[] = indicators.map(
+    (indicator) => {
+      const total = industries.reduce((acc: number, industry: Industry) => {
+        const impact = industry[indicator.Name] as number;
+        return acc + impact;
+      }, 0);
+      return { indicator, total };
+    }
+  );
+
+  return (
+    <div className="inset-0">
+      <div className="flex flex-col m-2 p-2 bg-white border-4 border-black">
+        <div className="text-xs font-light pb-1">Community/Region Profile</div>
+        <div className="text-lg font-extrabold border-b-8 pb-3 border-black">
+          {zipcode.zipcode}
+        </div>
+        {totals.map(({ indicator, total }) => (
+          <ImpactLine
+            label={indicator.Name}
+            units={indicator.Unit}
+            value={indicator.formatter(total)}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+export function CountyImpactLabel({
   county,
   industries,
   indicators,
-}: ImpactLabelParams): JSX.Element {
+}: CountyImpactLabelParams): JSX.Element {
   const totals: { indicator: Indicator; total: number }[] = indicators.map(
     (indicator) => {
       const total = industries.reduce((acc: number, industry: Industry) => {

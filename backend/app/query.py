@@ -212,6 +212,12 @@ def print_all_zipcodes():
     print(json.dumps(get_all_zipcodes().to_dict("records")))
 
 
+@blueprint.route("/zipcode/all", methods=["GET"])
+def serve_get_all_zipcodes():
+    current_app.logger.info("Request for all zipcodes.")
+    return {"results": get_all_zipcodes().to_dict("records")}
+
+
 @blueprint.route("/county/all", methods=["GET"])
 def serve_get_all_counties():
     current_app.logger.info("Request for all counties.")
@@ -290,7 +296,7 @@ def serve_direct_industry_impacts_by_zipcode():
     )
 
     industries = direct_industry_impacts_by_zipcode(
-        zipcode=params["zipcode"], sample_size=params["sample_size"]
+        zipcode=params["zipcode"], sample_size=params["sampleSize"]
     )
 
     current_app.logger.info(f"Computed impact data for zipcode {params['zipcode']}")

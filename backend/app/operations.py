@@ -106,19 +106,21 @@ def direct_industry_impacts_by_zipcode(*, zipcode, sample_size):
     )
 
 
-def direct_industry_impacts_by_county(state, county, sample_size):
+def direct_industry_impacts_by_county(statefp, countyfp, sample_size):
     current_app.logger.info(
-        f"Collecting direct industry impact data for state/{state}/county/{county}"
+        f"Collecting direct industry impact data for state/{statefp}/county/{countyfp}"
     )
     return direct_industry_impacts(
-        industries_by_county(statefp=int(state), countyfp=int(county)),
+        industries_by_county(statefp=int(statefp), countyfp=int(countyfp)),
         sample_size=sample_size,
     )
 
 
-def direct_industry_impacts_by_state(state, sample_size):
-    current_app.logger.info(f"Collecting direct industry impact data for state/{state}")
+def direct_industry_impacts_by_state(statefp, sample_size):
+    current_app.logger.info(
+        f"Collecting direct industry impact data for state/{statefp}"
+    )
     return direct_industry_impacts(
-        industries_by_state(statefp=int(state)),
+        industries_by_state(statefp=int(statefp)),
         sample_size=sample_size,
     )

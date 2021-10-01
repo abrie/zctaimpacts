@@ -94,6 +94,16 @@ def print_all_counties():
     print(json.dumps(app.operations.get_all_counties().to_dict("records")))
 
 
+@blueprint.cli.command("counties_by_state")
+@click.argument("statefp")
+def print_counties_by_state(statefp):
+    print(
+        json.dumps(
+            app.operations.get_counties_by_state(statefp=statefp).to_dict("records")
+        )
+    )
+
+
 @blueprint.cli.command("all_zipcodes")
 def print_all_zipcodes():
     print(json.dumps(app.operations.get_all_zipcodes().to_dict("records")))

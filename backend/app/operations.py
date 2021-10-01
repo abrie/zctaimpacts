@@ -1,5 +1,6 @@
 import statistics
 import random
+import pandas
 
 from flask import current_app
 import app.useeio.query
@@ -56,7 +57,7 @@ def industries_by_zipcode(*, zipcode):
     )
 
 
-def direct_industry_impacts(industries, sample_size):
+def direct_industry_impacts(industries, sample_size) -> pandas.DataFrame:
     crosswalk = get_sector_crosswalk()
     industries = industries.merge(crosswalk, left_on="NAICS2017", right_on="NAICS")
     impacts = get_direct_impacts_matrix().transpose()
@@ -80,6 +81,8 @@ def direct_industry_impacts(industries, sample_size):
 
     for impact in impacts.columns:
         aggregated[impact] = aggregated.apply(lambda row: sample(row, impact), axis=1)
+
+    return aggregated
 
 
 def direct_industry_impacts_by_zipcode(*, zipcode, sample_size):

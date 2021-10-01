@@ -84,6 +84,13 @@ export default function App() {
     }
   }, [searchTerms, stateSearch, countySearch, zipcodeSearch]);
 
+  function clearSearchBox() {
+    setSearchTerms("");
+    setStateHits([]);
+    setCountyHits([]);
+    setZipcodeHits([]);
+  }
+
   async function loadCountyImpacts(county: County) {
     const data = {
       statefp: county.statefp,
@@ -176,17 +183,29 @@ export default function App() {
     <div className="p-1 container flex flex-col h-screen max-h-screen mx-auto">
       <Header errorMessage={errorMessage} />
       <div className="flex flex-col flex-grow">
-        <SearchInput setSearchTerms={(terms) => setSearchTerms(terms)} />
+        <SearchInput
+          searchTerms={searchTerms}
+          setSearchTerms={(terms) => setSearchTerms(terms)}
+        />
         <StateSearchHits
-          onSelect={(state) => loadStateImpacts(state)}
+          onSelect={(state) => {
+            clearSearchBox();
+            loadStateImpacts(state);
+          }}
           hits={stateHits}
         />
         <CountySearchHits
-          onSelect={(county) => loadCountyImpacts(county)}
+          onSelect={(county) => {
+            clearSearchBox();
+            loadCountyImpacts(county);
+          }}
           hits={countyHits}
         />
         <ZipcodeSearchHits
-          onSelect={(zipcode) => loadZipcodeImpacts(zipcode)}
+          onSelect={(zipcode) => {
+            clearSearchBox();
+            loadZipcodeImpacts(zipcode);
+          }}
           hits={zipcodeHits}
         />
         <ProgressBar active={showProgress} />

@@ -1,5 +1,6 @@
 import { County, Zipcode, State } from "./Api";
 import lunr from "lunr";
+import { FaSearch } from "react-icons/fa";
 
 export interface StateSearch {
   index: State[];
@@ -69,7 +70,6 @@ function buildCountyIndex(documents: County[]): lunr.Index {
       this.add(doc);
     }, this);
   });
-  console.log("Done building county index.");
   return index;
 }
 
@@ -80,16 +80,24 @@ function buildCountyLookup(documents: County[]): Record<string, County> {
 }
 
 interface SearchParams {
+  searchTerms: string;
   setSearchTerms: (terms: string) => void;
 }
 
-export function SearchInput({ setSearchTerms }: SearchParams): JSX.Element {
+export function SearchInput({
+  setSearchTerms,
+  searchTerms,
+}: SearchParams): JSX.Element {
   return (
-    <div>
+    <div className="shadow flex rounded border">
+      <span className="w-auto flex justify-end items-center text-gray-500 p-2">
+        <FaSearch />
+      </span>
       <input
-        className="w-full"
+        className="w-full p-2 border-0 "
         type="text"
-        placeholder="...Search by County, State, or Zipcode"
+        value={searchTerms}
+        placeholder="Enter a County, State, or Zipcode"
         onChange={(event) => setSearchTerms(event.target.value)}
       ></input>
     </div>
@@ -105,11 +113,11 @@ export function CountySearchHits({
   onSelect,
   hits,
 }: CountySearchHitsParams): JSX.Element {
+  if (hits.length === 0) {
+    return <></>;
+  }
   return (
-    <div
-      id="hits"
-      className="overflow-hidden overflow-scroll bg-gray-200 border border-black max-h-40"
-    >
+    <div className="ml-8 pl-2 overflow-hidden overflow-scroll bg-gray-200 max-h-40">
       {hits.map((hit: County) => (
         <div
           className="cursor-pointer hover:bg-green-400"
@@ -134,11 +142,11 @@ export function ZipcodeSearchHits({
   onSelect,
   hits,
 }: ZipcodeSearchHitsParams): JSX.Element {
+  if (hits.length === 0) {
+    return <></>;
+  }
   return (
-    <div
-      id="hits"
-      className="overflow-hidden overflow-scroll bg-gray-200 border border-black max-h-40"
-    >
+    <div className="ml-8 pl-2 overflow-hidden overflow-scroll bg-gray-200 max-h-40">
       {hits.map((hit: Zipcode) => (
         <div
           className="cursor-pointer hover:bg-green-400"
@@ -163,11 +171,11 @@ export function StateSearchHits({
   onSelect,
   hits,
 }: StateSearchHitsParams): JSX.Element {
+  if (hits.length === 0) {
+    return <></>;
+  }
   return (
-    <div
-      id="hits"
-      className="overflow-hidden overflow-scroll bg-gray-200 border border-black max-h-40"
-    >
+    <div className="ml-8 pl-2 overflow-hidden overflow-scroll bg-gray-200 max-h-40">
       {hits.map((hit: State) => (
         <div
           className="cursor-pointer hover:bg-green-400"

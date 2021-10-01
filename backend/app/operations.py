@@ -69,7 +69,7 @@ def direct_industry_impacts(industries, sample_size):
     aggregation_operations["BEA_Detail"] = lambda ser: list(set(ser))  # type: ignore
     aggregated = grouped.agg(aggregation_operations)
 
-    def mean_of_combinations(row, col):
+    def sample(row, col):
         population = list(row[col])
         if len(population) == 1:
             return population[0]
@@ -79,9 +79,7 @@ def direct_industry_impacts(industries, sample_size):
         return statistics.mean(samples)
 
     for impact in impacts.columns:
-        aggregated[impact] = aggregated.apply(
-            lambda row: mean_of_combinations(row, impact), axis=1
-        )
+        aggregated[impact] = aggregated.apply(lambda row: sample(row, impact), axis=1)
 
 
 def direct_industry_impacts_by_zipcode(*, zipcode, sample_size):

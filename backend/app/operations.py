@@ -56,7 +56,7 @@ def industries_by_zipcode(*, zipcode):
     )
 
 
-def compute_direct_impacts(industries, sample_size):
+def direct_industry_impacts(industries, sample_size):
     crosswalk = get_sector_crosswalk()
     industries = industries.merge(crosswalk, left_on="NAICS2017", right_on="NAICS")
     impacts = get_direct_impacts_matrix().transpose()
@@ -88,7 +88,7 @@ def direct_industry_impacts_by_zipcode(*, zipcode, sample_size):
     current_app.logger.info(
         f"Collecting direct industry impact data for zipcode/{zipcode}"
     )
-    return compute_direct_impacts(
+    return direct_industry_impacts(
         industries_by_zipcode(zipcode=zipcode), sample_size=sample_size
     )
 
@@ -97,7 +97,7 @@ def direct_industry_impacts_by_county(state, county, sample_size):
     current_app.logger.info(
         f"Collecting direct industry impact data for state/{state}/county/{county}"
     )
-    return compute_direct_impacts(
+    return direct_industry_impacts(
         industries_by_county(statefp=int(state), countyfp=int(county)),
         sample_size=sample_size,
     )

@@ -65,8 +65,9 @@ export function ZipcodeImpactLabel({
         <div className="text-lg font-extrabold border-b-8 pb-3 border-black">
           {zipcode.zipcode}
         </div>
-        {totals.map(({ indicator, total }) => (
+        {totals.map(({ indicator, total }, idx: number) => (
           <ImpactLine
+            key={idx}
             label={indicator.Name}
             units={indicator.Unit}
             value={indicator.formatter(total)}
@@ -102,8 +103,9 @@ export function CountyImpactLabel({
           <span className="text-sm font-bold pr-1">County:</span>
           <span className="text-sm font-light">{county.county_name}</span>
         </div>
-        {totals.map(({ indicator, total }) => (
+        {totals.map(({ indicator, total }, idx: number) => (
           <ImpactLine
+            key={idx}
             label={indicator.Name}
             units={indicator.Unit}
             value={indicator.formatter(total)}
@@ -139,8 +141,9 @@ export function StateImpactLabel({
         <div className="border-b pb-1 border-black mb-2">
           <span className="text-sm font-bold pr-1">Entire State</span>
         </div>
-        {totals.map(({ indicator, total }) => (
+        {totals.map(({ indicator, total }, idx: number) => (
           <ImpactLine
+            key={idx}
             label={indicator.Name}
             units={indicator.Unit}
             value={indicator.formatter(total)}

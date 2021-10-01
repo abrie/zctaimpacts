@@ -210,7 +210,10 @@ export default function App() {
         />
         <ProgressBar active={showProgress} />
         {impacts.map((impactLabelParams: ImpactLabelParams) => (
-          <ImpactLabel {...impactLabelParams} />
+          <ImpactLabel
+            key={Math.floor(Math.random() * Number.MAX_SAFE_INTEGER)}
+            {...impactLabelParams}
+          />
         ))}
       </div>
     </div>

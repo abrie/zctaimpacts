@@ -40,6 +40,14 @@ def get_all_zipcodes():
     return app.gis.query.get_all_zipcodes(spatial_db=get_spatial_db())
 
 
+def industries_by_zipcode(*, zipcode):
+    return app.cbp.query.get_industries_by_zipcode(
+        base_url=current_app.config["CENSUS_BASE_URL"],
+        api_key=current_app.config["CENSUS_API_KEY"],
+        zipcode=zipcode,
+    )
+
+
 def industries_by_county(*, statefp, countyfp):
     return app.cbp.query.get_industries_by_county(
         base_url=current_app.config["CENSUS_BASE_URL"],
@@ -49,11 +57,11 @@ def industries_by_county(*, statefp, countyfp):
     )
 
 
-def industries_by_zipcode(*, zipcode):
-    return app.cbp.query.get_industries_by_zipcode(
+def industries_by_state(*, statefp):
+    return app.cbp.query.get_industries_by_state(
         base_url=current_app.config["CENSUS_BASE_URL"],
         api_key=current_app.config["CENSUS_API_KEY"],
-        zipcode=zipcode,
+        statefp=statefp,
     )
 
 
@@ -100,5 +108,13 @@ def direct_industry_impacts_by_county(state, county, sample_size):
     )
     return direct_industry_impacts(
         industries_by_county(statefp=int(state), countyfp=int(county)),
+        sample_size=sample_size,
+    )
+
+
+def direct_industry_impacts_by_state(state, sample_size):
+    current_app.logger.info(f"Collecting direct industry impact data for state/{state}")
+    return direct_industry_impacts(
+        industries_by_state(statefp=int(state)),
         sample_size=sample_size,
     )

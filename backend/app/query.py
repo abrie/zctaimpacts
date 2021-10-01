@@ -48,6 +48,13 @@ def print_industries_by_county(state, county):
     print(industries.to_html())
 
 
+@blueprint.cli.command("industries_by_state")
+@click.argument("state")
+def print_industries_by_state(state):
+    industries = app.operations.industries_by_state(statefp=int(state))
+    print(industries.to_html())
+
+
 @blueprint.cli.command("industries_by_zipcode")
 @click.argument("zipcode")
 def print_industries_by_zipcode(zipcode):
@@ -58,6 +65,17 @@ def print_industries_by_zipcode(zipcode):
 @blueprint.cli.command("direct_impacts_matrix")
 def print_direct_impacts_matrix():
     print(app.operations.get_direct_impacts_matrix().transpose())
+
+
+@blueprint.cli.command("direct_industry_impacts_by_zipcode")
+@click.argument("zipcode")
+@click.option("--sample_size", default=100)
+def print_direct_industry_impacts_by_zipcode(zipcode, sample_size):
+    print(
+        app.operations.direct_industry_impacts_by_zipcode(
+            zipcode=zipcode, sample_size=sample_size
+        ).to_html()
+    )
 
 
 @blueprint.cli.command("direct_industry_impacts_by_county")
@@ -72,15 +90,11 @@ def print_direct_industry_impacts_by_county(state, county, sample_size):
     )
 
 
-@blueprint.cli.command("direct_industry_impacts_by_zipcode")
-@click.argument("zipcode")
+@blueprint.cli.command("direct_industry_impacts_by_state")
+@click.argument("state")
 @click.option("--sample_size", default=100)
-def print_direct_industry_impacts_by_zipcode(zipcode, sample_size):
-    print(
-        app.operations.direct_industry_impacts_by_zipcode(
-            zipcode=zipcode, sample_size=sample_size
-        ).to_html()
-    )
+def print_direct_industry_impacts_by_state(state, sample_size):
+    print(app.operations.direct_industry_impacts_by_state(state, sample_size).to_html())
 
 
 @blueprint.cli.command("sector_crosswalk")

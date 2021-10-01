@@ -4,7 +4,7 @@ import json
 from flask import Blueprint, request, current_app
 
 import app.operations
-from app.db import get_spatial_db
+from app.db import get_db
 
 
 class InvalidAPIUsage(Exception):
@@ -165,9 +165,7 @@ def zcta():
 
     jsonschema.validate(instance=mbr, schema=schema)
 
-    return app.gis.query.get_zctas_intersecting_mbr(
-        spatial_db=get_spatial_db(), mbr=mbr
-    )
+    return app.gis.query.get_zctas_intersecting_mbr(db=get_db(), mbr=mbr)
 
 
 @blueprint.route("/county/mbr", methods=["POST"])
@@ -189,9 +187,7 @@ def county_mbr():
 
     jsonschema.validate(instance=mbr, schema=schema)
 
-    result = app.gis.query.get_counties_intersecting_mbr(
-        spatial_db=get_spatial_db(), mbr=mbr
-    )
+    result = app.gis.query.get_counties_intersecting_mbr(db=get_db(), mbr=mbr)
 
     return result
 

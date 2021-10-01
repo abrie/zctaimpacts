@@ -17,8 +17,7 @@ def create_app(test_config=None):
     )
     app.config.from_mapping(
         SECRET_KEY="dev",
-        SPATIAL_DATABASE=os.path.join(app.instance_path, "db.spatialite"),
-        DATABASE=os.path.join(app.instance_path, "db.sqlite3"),
+        DATABASE=os.path.join(app.instance_path, "db.spatialite"),
     )
 
     if test_config is None:

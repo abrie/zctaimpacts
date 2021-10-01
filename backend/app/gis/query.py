@@ -2,7 +2,7 @@ import json
 import pandas
 
 
-def get_zctas_intersecting_mbr(*, spatial_db, mbr):
+def get_zctas_intersecting_mbr(*, db, mbr):
     sql = """
     SELECT
       zcta_geojson.ZCTA5CE20,
@@ -19,7 +19,7 @@ def get_zctas_intersecting_mbr(*, spatial_db, mbr):
       ) AS zcta_shp ON zcta_geojson.ZCTA5CE20 = zcta_shp.ZCTA5CE20
     """
 
-    rows = spatial_db.execute(sql, mbr).fetchall()
+    rows = db.execute(sql, mbr).fetchall()
 
     return {
         "results": [
@@ -29,7 +29,7 @@ def get_zctas_intersecting_mbr(*, spatial_db, mbr):
     }
 
 
-def get_counties_intersecting_mbr(*, spatial_db, mbr):
+def get_counties_intersecting_mbr(*, db, mbr):
     sql = """
     SELECT
       cast(county_geojson.STATEFP as INTEGER) as STATEFP,
@@ -53,7 +53,7 @@ def get_counties_intersecting_mbr(*, spatial_db, mbr):
       ) AS county_shp ON county_geojson.GEOID = county_shp.GEOID
       INNER JOIN county_fips ON county_fips.fips = county_geojson.GEOID
     """
-    rows = spatial_db.execute(sql, mbr).fetchall()
+    rows = db.execute(sql, mbr).fetchall()
 
     return {
         "results": [
@@ -71,7 +71,7 @@ def get_counties_intersecting_mbr(*, spatial_db, mbr):
     }
 
 
-def get_all_zipcodes(*, spatial_db):
+def get_all_zipcodes(*, db):
     sql = """
     SELECT
         ZCTA5CE20 as zipcode,
@@ -80,13 +80,13 @@ def get_all_zipcodes(*, spatial_db):
         zcta_geojson
       """
 
-    df = pandas.read_sql_query(sql, spatial_db)
+    df = pandas.read_sql_query(sql, db)
     df.columns = df.columns.str.lower()
 
     return df
 
 
-def get_counties_by_state(*, spatial_db, statefp):
+def get_counties_by_state(*, db, statefp):
     sql = """
     SELECT
       cast(county_geojson.STATEFP as INTEGER) as STATEFP,
@@ -102,13 +102,13 @@ def get_counties_by_state(*, spatial_db, statefp):
         STATEFP = :statefp
       """
 
-    df = pandas.read_sql_query(sql, spatial_db, params={"statefp": statefp})
+    df = pandas.read_sql_query(sql, db, params={"statefp": statefp})
     df.columns = df.columns.str.lower()
 
     return df
 
 
-def get_all_counties(*, spatial_db):
+def get_all_counties(*, db):
     sql = """
     SELECT
       cast(county_geojson.STATEFP as INTEGER) as STATEFP,
@@ -122,13 +122,13 @@ def get_all_counties(*, spatial_db):
       INNER JOIN county_fips ON county_fips.fips = county_geojson.GEOID
       """
 
-    df = pandas.read_sql_query(sql, spatial_db)
+    df = pandas.read_sql_query(sql, db)
     df.columns = df.columns.str.lower()
 
     return df
 
 
-def get_all_states(*, spatial_db):
+def get_all_states(*, db):
     sql = """
     SELECT
       cast(state_geojson.STATEFP as INTEGER) as STATEFP,
@@ -138,7 +138,7 @@ def get_all_states(*, spatial_db):
       state_geojson
       """
 
-    df = pandas.read_sql_query(sql, spatial_db)
+    df = pandas.read_sql_query(sql, db)
     df.columns = df.columns.str.lower()
 
     return df

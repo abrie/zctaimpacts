@@ -3,45 +3,43 @@ import random
 import pandas
 
 from flask import current_app
-import app.useeio.query
+import app.useeio.matrices
 import app.gis.query
 import app.cbp.query
-from app.db import get_spatial_db
+from app.db import get_db
 
 
 def get_sector_crosswalk():
-    matrices = app.useeio.query.get_matrices()
+    matrices = app.useeio.matrices.get_matrices()
     return matrices["SectorCrosswalk"]
 
 
 def get_indicators_matrix():
-    matrices = app.useeio.query.get_matrices()
+    matrices = app.useeio.matrices.get_matrices()
     return matrices["indicators"]
 
 
 def get_direct_impacts_matrix():
-    matrices = app.useeio.query.get_matrices()
+    matrices = app.useeio.matrices.get_matrices()
     D = matrices["D"]
     D.columns = D.columns.str.rstrip("/US")
     return D
 
 
 def get_all_counties():
-    return app.gis.query.get_all_counties(spatial_db=get_spatial_db())
+    return app.gis.query.get_all_counties(db=get_db())
 
 
 def get_all_states():
-    return app.gis.query.get_all_states(spatial_db=get_spatial_db())
+    return app.gis.query.get_all_states(db=get_db())
 
 
 def get_counties_by_state(statefp):
-    return app.gis.query.get_counties_by_state(
-        spatial_db=get_spatial_db(), statefp=statefp
-    )
+    return app.gis.query.get_counties_by_state(db=get_db(), statefp=statefp)
 
 
 def get_all_zipcodes():
-    return app.gis.query.get_all_zipcodes(spatial_db=get_spatial_db())
+    return app.gis.query.get_all_zipcodes(db=get_db())
 
 
 def industries_by_zipcode(*, zipcode):

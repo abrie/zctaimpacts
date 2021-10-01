@@ -123,6 +123,11 @@ def print_all_zipcodes():
     print(json.dumps(app.operations.get_all_zipcodes().to_dict("records")))
 
 
+@blueprint.cli.command("all_states")
+def print_all_states():
+    print(json.dumps(app.operations.get_all_states().to_dict("records")))
+
+
 @blueprint.route("/zipcode/all", methods=["GET"])
 def serve_get_all_zipcodes():
     current_app.logger.info("Request for all zipcodes.")
@@ -133,6 +138,12 @@ def serve_get_all_zipcodes():
 def serve_get_all_counties():
     current_app.logger.info("Request for all counties.")
     return {"results": app.operations.get_all_counties().to_dict("records")}
+
+
+@blueprint.route("/state/all", methods=["GET"])
+def serve_get_all_states():
+    current_app.logger.info("Request for all states.")
+    return {"results": app.operations.get_all_states().to_dict("records")}
 
 
 @blueprint.route("/zcta/mbr", methods=["POST"])
@@ -246,6 +257,38 @@ def serve_direct_industry_impacts_by_county():
     current_app.logger.info(
         f"Computed impact data for {params['statefp']} {params['countyfp']}"
     )
+
+    return {
+        "industries": industries.to_dict("records"),
+    }
+
+
+@blueprint.route("/state/impacts", methods=["POST"])
+def serve_direct_industry_impacts_by_state():
+    params = request.get_json()
+    if params is None:
+        raise InvalidAPIUsage("No JSON body found.")
+
+    schema = {
+        "type": "object",
+        "properties": {
+            "statefp": {"type": "number"},
+            "sampleSize": {"type": "number"},
+        },
+        "required": ["statefp", "sampleSize"],
+    }
+
+    jsonschema.validate(instance=params, schema=schema)
+
+    current_app.logger.info(
+        f"Processing request for impact data for state/{params['statefp']}"
+    )
+
+    industries = app.operations.direct_industry_impacts_by_state(
+        params["statefp"], params["sampleSize"]
+    )
+
+    current_app.logger.info(f"Computed impact data for state/{params['statefp']}")
 
     return {
         "industries": industries.to_dict("records"),

@@ -30,6 +30,10 @@ def get_all_counties():
     return app.gis.query.get_all_counties(spatial_db=get_spatial_db())
 
 
+def get_all_states():
+    return app.gis.query.get_all_states(spatial_db=get_spatial_db())
+
+
 def get_counties_by_state(statefp):
     return app.gis.query.get_counties_by_state(
         spatial_db=get_spatial_db(), statefp=statefp

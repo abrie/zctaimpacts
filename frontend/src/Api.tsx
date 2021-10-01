@@ -1,3 +1,7 @@
+export interface QueryStateImpactsResponse {
+  industries: Industry[];
+}
+
 export interface QueryCountyImpactsResponse {
   industries: Industry[];
 }
@@ -301,10 +305,20 @@ export interface County {
   geometry: GeoJSON.Polygon;
 }
 
+export interface State {
+  name: string;
+  statefp: number;
+  geoid: string;
+}
+
 export interface QueryCountyResponse {
   results: County[];
 }
 
 export interface QueryZipcodeResponse {
   results: Zipcode[];
+}
+
+export interface QueryStateResponse {
+  results: State[];
 }

@@ -5,25 +5,32 @@ import { Header } from "./HeaderFooter";
 import { ImpactLabel, ImpactLabelParams } from "./ImpactLabel";
 import {
   SearchInput,
+  StateSearchHits,
   CountySearchHits,
   ZipcodeSearchHits,
   buildCountySearch,
   buildZipcodeSearch,
+  buildStateSearch,
   CountySearch,
   ZipcodeSearch,
+  StateSearch,
 } from "./Search";
 import type {
+  State,
   County,
   Zipcode,
+  QueryStateImpactsResponse,
   QueryCountyImpactsResponse,
   QueryZipcodeImpactsResponse,
   QueryCountyResponse,
   QueryZipcodeResponse,
+  QueryStateResponse,
 } from "./Api";
 import { Indicators } from "./Api";
 
 export default function App() {
   const [showProgress, setShowProgress] = useState<boolean>(false);
+  const [stateHits, setStateHits] = useState<State[]>([]);
   const [countyHits, setCountyHits] = useState<County[]>([]);
   const [zipcodeHits, setZipcodeHits] = useState<Zipcode[]>([]);
   const [searchTerms, setSearchTerms] = useState<string>("");
@@ -31,6 +38,9 @@ export default function App() {
     undefined
   );
   const [zipcodeSearch, setZipcodeSearch] = useState<ZipcodeSearch | undefined>(
+    undefined
+  );
+  const [stateSearch, setStateSearch] = useState<StateSearch | undefined>(
     undefined
   );
   const [impacts, setImpacts] = useState<ImpactLabelParams[]>([]);
@@ -50,6 +60,14 @@ export default function App() {
 
   useEffect(() => {
     (async () => {
+      const response = await axios.get<QueryStateResponse>("/query/state/all");
+
+      setStateSearch(buildStateSearch(response.data.results));
+    })();
+  }, []);
+
+  useEffect(() => {
+    (async () => {
       const response = await axios.get<QueryZipcodeResponse>(
         "/query/zipcode/all"
       );
@@ -59,11 +77,12 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    if (countySearch && zipcodeSearch && searchTerms) {
+    if (countySearch && zipcodeSearch && stateSearch && searchTerms) {
+      setStateHits(stateSearch.search(searchTerms));
       setCountyHits(countySearch.search(searchTerms));
       setZipcodeHits(zipcodeSearch.search(searchTerms));
     }
-  }, [searchTerms, countySearch, zipcodeSearch]);
+  }, [searchTerms, stateSearch, countySearch, zipcodeSearch]);
 
   async function loadCountyImpacts(county: County) {
     const data = {
@@ -86,6 +105,35 @@ export default function App() {
           industries: response.data.industries,
           indicators: Indicators,
           county: county,
+        },
+        ...i,
+      ]);
+    } catch (e: unknown) {
+      setShowProgress(false);
+      setErrorMessage(`${e}`);
+    }
+  }
+
+  async function loadStateImpacts(state: State) {
+    const data = {
+      statefp: state.statefp,
+      sampleSize: 50,
+    };
+
+    try {
+      setShowProgress(true);
+      setErrorMessage(undefined);
+      const response = await axios.post<QueryStateImpactsResponse>(
+        "/query/state/impacts",
+        data
+      );
+      setShowProgress(false);
+      setImpacts((i) => [
+        {
+          type: "State",
+          industries: response.data.industries,
+          indicators: Indicators,
+          state: state,
         },
         ...i,
       ]);
@@ -129,6 +177,10 @@ export default function App() {
       <Header errorMessage={errorMessage} />
       <div className="flex flex-col flex-grow">
         <SearchInput setSearchTerms={(terms) => setSearchTerms(terms)} />
+        <StateSearchHits
+          onSelect={(state) => loadStateImpacts(state)}
+          hits={stateHits}
+        />
         <CountySearchHits
           onSelect={(county) => loadCountyImpacts(county)}
           hits={countyHits}

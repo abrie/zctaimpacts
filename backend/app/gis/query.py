@@ -126,3 +126,19 @@ def get_all_counties(*, spatial_db):
     df.columns = df.columns.str.lower()
 
     return df
+
+
+def get_all_states(*, spatial_db):
+    sql = """
+    SELECT
+      cast(state_geojson.STATEFP as INTEGER) as STATEFP,
+      cast(state_geojson.GEOID as INTEGER) as GEOID,
+      state_geojson.NAME
+    FROM
+      state_geojson
+      """
+
+    df = pandas.read_sql_query(sql, spatial_db)
+    df.columns = df.columns.str.lower()
+
+    return df

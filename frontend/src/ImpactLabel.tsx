@@ -1,4 +1,11 @@
-import { County, Zipcode, Industry, Indicator } from "./Api";
+import { State, County, Zipcode, Industry, Indicator } from "./Api";
+
+export interface StateImpactLabelParams {
+  type: "State";
+  state: State;
+  industries: Industry[];
+  indicators: Indicator[];
+}
 
 export interface CountyImpactLabelParams {
   type: "County";
@@ -16,7 +23,8 @@ export interface ZipcodeImpactLabelParams {
 
 export type ImpactLabelParams =
   | CountyImpactLabelParams
-  | ZipcodeImpactLabelParams;
+  | ZipcodeImpactLabelParams
+  | StateImpactLabelParams;
 
 interface ImpactLineParams {
   label: string;
@@ -30,6 +38,8 @@ export function ImpactLabel(impactLabelParams: ImpactLabelParams): JSX.Element {
       return CountyImpactLabel(impactLabelParams);
     case "Zipcode":
       return ZipcodeImpactLabel(impactLabelParams);
+    case "State":
+      return StateImpactLabel(impactLabelParams);
   }
 }
 
@@ -91,6 +101,43 @@ export function CountyImpactLabel({
         <div className="border-b pb-1 border-black mb-2">
           <span className="text-sm font-bold pr-1">County:</span>
           <span className="text-sm font-light">{county.county_name}</span>
+        </div>
+        {totals.map(({ indicator, total }) => (
+          <ImpactLine
+            label={indicator.Name}
+            units={indicator.Unit}
+            value={indicator.formatter(total)}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+export function StateImpactLabel({
+  state,
+  industries,
+  indicators,
+}: StateImpactLabelParams): JSX.Element {
+  const totals: { indicator: Indicator; total: number }[] = indicators.map(
+    (indicator) => {
+      const total = industries.reduce((acc: number, industry: Industry) => {
+        const impact = industry[indicator.Name] as number;
+        return acc + impact;
+      }, 0);
+      return { indicator, total };
+    }
+  );
+
+  return (
+    <div className="inset-0">
+      <div className="flex flex-col m-2 p-2 bg-white border-4 border-black">
+        <div className="text-xs font-light pb-1">Community/Region Profile</div>
+        <div className="text-lg font-extrabold border-b-8 pb-3 border-black">
+          {state.name}
+        </div>
+        <div className="border-b pb-1 border-black mb-2">
+          <span className="text-sm font-bold pr-1">Entire State</span>
         </div>
         {totals.map(({ indicator, total }) => (
           <ImpactLine

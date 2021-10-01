@@ -1,5 +1,24 @@
-import { County, Zipcode } from "./Api";
+import { County, Zipcode, State } from "./Api";
 import lunr from "lunr";
+
+export interface StateSearch {
+  index: State[];
+  search: (terms: string) => State[];
+}
+
+export function buildStateSearch(documents: State[]): StateSearch {
+  const index = documents;
+  const search = (terms: string): State[] => {
+    return index.filter((state: State) =>
+      state.name.toUpperCase().startsWith(terms.toUpperCase())
+    );
+  };
+
+  return {
+    index,
+    search,
+  };
+}
 
 export interface ZipcodeSearch {
   index: Zipcode[];
@@ -129,6 +148,35 @@ export function ZipcodeSearchHits({
           }}
         >
           {hit.zipcode}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+interface StateSearchHitsParams {
+  onSelect: (state: State) => void;
+  hits: State[];
+}
+
+export function StateSearchHits({
+  onSelect,
+  hits,
+}: StateSearchHitsParams): JSX.Element {
+  return (
+    <div
+      id="hits"
+      className="overflow-hidden overflow-scroll bg-gray-200 border border-black max-h-40"
+    >
+      {hits.map((hit: State) => (
+        <div
+          className="cursor-pointer hover:bg-green-400"
+          key={hit.geoid}
+          onClick={() => {
+            onSelect({ ...hit });
+          }}
+        >
+          {hit.name}
         </div>
       ))}
     </div>

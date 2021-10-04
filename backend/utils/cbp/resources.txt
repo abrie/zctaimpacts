@@ -1,0 +1,5 @@
+https://www2.census.gov/programs-surveys/cbp/datasets/2019/cbp19co.zip
+https://www2.census.gov/programs-surveys/cbp/datasets/2019/cbp19st.zip
+https://www2.census.gov/programs-surveys/cbp/datasets/2019/cbp19pr_ia_co.zip
+https://www2.census.gov/programs-surveys/cbp/datasets/2019/cbp19us.zip
+https://www2.census.gov/programs-surveys/cbp/datasets/2019/zbp19detail.zip

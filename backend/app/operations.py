@@ -1,12 +1,14 @@
 import statistics
 import random
 import pandas
+from typing import Union
 
 from flask import current_app
 import app.useeio.matrices
 import app.gis.query
 import app.cbp.query
-from app.db import get_db
+import app.cbp.database
+from app.db import get_db, get_cbp_db
 
 
 def get_sector_crosswalk():
@@ -42,37 +44,61 @@ def get_all_zipcodes():
     return app.gis.query.get_all_zipcodes(db=get_db())
 
 
-def industries_by_zipcode(*, zipcode):
-    return app.cbp.query.get_industries_by_zipcode(
-        base_url=current_app.config["CENSUS_BASE_URL"],
-        api_key=current_app.config["CENSUS_API_KEY"],
-        zipcode=zipcode,
-    )
+def industries_by_zipcode(*, zipcode) -> Union[pandas.DataFrame, None]:
+    def use_database():
+        return app.cbp.database.get_industries_by_zipcode(
+            db=get_cbp_db(), zipcode=zipcode
+        )
+
+    def use_api():
+        return app.cbp.query.get_industries_by_zipcode(
+            base_url=current_app.config["CENSUS_BASE_URL"],
+            api_key=current_app.config["CENSUS_API_KEY"],
+            zipcode=zipcode,
+        )
+
+    return use_database()
 
 
-def industries_by_county(*, statefp, countyfp):
-    return app.cbp.query.get_industries_by_county(
-        base_url=current_app.config["CENSUS_BASE_URL"],
-        api_key=current_app.config["CENSUS_API_KEY"],
-        statefp=statefp,
-        countyfp=countyfp,
-    )
+def industries_by_county(*, statefp, countyfp) -> Union[pandas.DataFrame, None]:
+    def use_database():
+        return app.cbp.database.get_industries_by_county(
+            db=get_cbp_db(), statefp=statefp, countyfp=countyfp
+        )
+
+    def use_api():
+        return app.cbp.query.get_industries_by_county(
+            base_url=current_app.config["CENSUS_BASE_URL"],
+            api_key=current_app.config["CENSUS_API_KEY"],
+            statefp=statefp,
+            countyfp=countyfp,
+        )
+
+    return use_database()
 
 
-def industries_by_state(*, statefp):
-    return app.cbp.query.get_industries_by_state(
-        base_url=current_app.config["CENSUS_BASE_URL"],
-        api_key=current_app.config["CENSUS_API_KEY"],
-        statefp=statefp,
-    )
+def industries_by_state(*, statefp) -> Union[pandas.DataFrame, None]:
+    def use_database():
+        return app.cbp.database.get_industries_by_state(
+            db=get_cbp_db(), statefp=statefp
+        )
+
+    def use_api():
+        return app.cbp.query.get_industries_by_state(
+            base_url=current_app.config["CENSUS_BASE_URL"],
+            api_key=current_app.config["CENSUS_API_KEY"],
+            statefp=statefp,
+        )
+
+    return use_database()
 
 
 def direct_industry_impacts(industries, sample_size) -> pandas.DataFrame:
     crosswalk = get_sector_crosswalk()
-    industries = industries.merge(crosswalk, left_on="NAICS2017", right_on="NAICS")
+    industries = industries.merge(crosswalk, left_on="naics", right_on="NAICS")
     impacts = get_direct_impacts_matrix().transpose()
     industries = industries.merge(impacts, left_on="BEA_Detail", right_index=True)
-    grouped = industries.groupby("NAICS2017", as_index=False)
+    grouped = industries.groupby("naics", as_index=False)
 
     aggregate_default = {x: "first" for x in industries.columns}
     aggregate_as_set = {x: lambda ser: set(ser) for x in impacts.columns}
@@ -85,7 +111,7 @@ def direct_industry_impacts(industries, sample_size) -> pandas.DataFrame:
         if len(population) == 1:
             return population[0]
 
-        k = row["ESTAB"]
+        k = row["establishments"]
         samples = [sum(random.choices(population, k=k)) for _ in range(0, sample_size)]
         return statistics.mean(samples)
 

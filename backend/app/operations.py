@@ -93,9 +93,13 @@ def industries_by_state(*, statefp) -> Union[pandas.DataFrame, None]:
     return use_database()
 
 
-def direct_industry_impacts(industries, sample_size) -> pandas.DataFrame:
+def direct_industry_impacts(industries, sample_size) -> Union[pandas.DataFrame,None]:
+    if (industries.shape[0] == 0):
+        return None
+
     crosswalk = get_sector_crosswalk()
     industries = industries.merge(crosswalk, left_on="naics", right_on="NAICS")
+    industries = industries.drop(["NAICS"], axis=1)
     impacts = get_direct_impacts_matrix().transpose()
     industries = industries.merge(impacts, left_on="BEA_Detail", right_index=True)
     grouped = industries.groupby("naics", as_index=False)

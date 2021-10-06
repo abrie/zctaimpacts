@@ -93,8 +93,8 @@ def industries_by_state(*, statefp) -> Union[pandas.DataFrame, None]:
     return use_database()
 
 
-def direct_industry_impacts(industries, sample_size) -> Union[pandas.DataFrame,None]:
-    if (industries.shape[0] == 0):
+def compute_direct_industry_impacts(industries) -> Union[pandas.DataFrame, None]:
+    if industries.shape[0] == 0:
         return None
 
     crosswalk = get_sector_crosswalk()
@@ -105,50 +105,30 @@ def direct_industry_impacts(industries, sample_size) -> Union[pandas.DataFrame,N
     grouped = industries.groupby("naics", as_index=False)
 
     aggregate_default = {x: "first" for x in industries.columns}
-    aggregate_as_set = {x: lambda ser: set(ser) for x in impacts.columns}
-    aggregation_operations = aggregate_default | aggregate_as_set
-    aggregation_operations["BEA_Detail"] = lambda ser: list(set(ser))  # type: ignore
-    aggregated = grouped.agg(aggregation_operations)
-
-    def sample(row, col):
-        population = list(row[col])
-        if len(population) == 1:
-            return population[0]
-
-        k = row["establishments"]
-        samples = [sum(random.choices(population, k=k)) for _ in range(0, sample_size)]
-        return statistics.mean(samples)
-
-    for impact in impacts.columns:
-        aggregated[impact] = aggregated.apply(lambda row: sample(row, impact), axis=1)
+    aggregate_impacts = {x: "mean" for x in impacts.columns}
+    aggregated = grouped.agg(aggregate_default | aggregate_impacts)
 
     return aggregated
 
 
-def direct_industry_impacts_by_zipcode(*, zipcode, sample_size):
+def compute_direct_industry_impacts_by_zipcode(*, zipcode):
     current_app.logger.info(
-        f"Collecting direct industry impact data for zipcode/{zipcode}"
+        f"Computing direct industry impact data for zipcode/{zipcode}"
     )
-    return direct_industry_impacts(
-        industries_by_zipcode(zipcode=zipcode), sample_size=sample_size
-    )
+    return compute_direct_industry_impacts(industries_by_zipcode(zipcode=zipcode))
 
 
-def direct_industry_impacts_by_county(statefp, countyfp, sample_size):
+def compute_direct_industry_impacts_by_county(statefp, countyfp, sample_size):
     current_app.logger.info(
-        f"Collecting direct industry impact data for state/{statefp}/county/{countyfp}"
+        f"Computing direct industry impact data for state/{statefp}/county/{countyfp}"
     )
-    return direct_industry_impacts(
-        industries_by_county(statefp=int(statefp), countyfp=int(countyfp)),
-        sample_size=sample_size,
+    return compute_direct_industry_impacts(
+        industries_by_county(statefp=int(statefp), countyfp=int(countyfp))
     )
 
 
-def direct_industry_impacts_by_state(statefp, sample_size):
+def compute_direct_industry_impacts_by_state(statefp, sample_size):
     current_app.logger.info(
-        f"Collecting direct industry impact data for state/{statefp}"
+        f"Computing direct industry impact data for state/{statefp}"
     )
-    return direct_industry_impacts(
-        industries_by_state(statefp=int(statefp)),
-        sample_size=sample_size,
-    )
+    return compute_direct_industry_impacts(industries_by_state(statefp=int(statefp)))

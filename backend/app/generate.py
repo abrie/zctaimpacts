@@ -1,7 +1,5 @@
 import sqlite3
-import pandas
 from flask import Blueprint
-
 import app.operations
 
 blueprint = Blueprint("generate", __name__, url_prefix="/generate")
@@ -9,15 +7,49 @@ blueprint = Blueprint("generate", __name__, url_prefix="/generate")
 
 @blueprint.cli.command("zipcodes")
 def generate_zipcodes():
-    con = sqlite3.connect("zipcodes.sqlite3")
-    for row in app.operations.get_all_zipcodes().itertuples():
-        print(row.zipcode)
-        df = app.operations.direct_industry_impacts_by_zipcode(
-            zipcode=row.zipcode, sample_size=50
-        )
-        if df is None:
-            print("No data for:", row.zipcode)
-            continue
-        df = df.drop(["BEA_Detail"], axis=1)
-        df.to_sql("zipcode", con, if_exists="append")
-    con.close()
+    with sqlite3.connect("impacts.sqlite3") as con:
+        for row in app.operations.get_all_zipcodes().itertuples():
+            try:
+                print(row)
+                df = app.operations.compute_direct_industry_impacts_by_zipcode(
+                    zipcode=row.zipcode, sample_size=50
+                )
+                if df is None:
+                    continue
+                df.to_sql("zipcode", con, if_exists="append")
+            except ValueError:
+                print("Failed for zipcode:", row.zipcode)
+
+
+@blueprint.cli.command("counties")
+def generate_counties():
+    with sqlite3.connect("impacts.sqlite3") as con:
+        for row in app.operations.get_all_counties().itertuples():
+            try:
+                print(row)
+                df = app.operations.compute_direct_industry_impacts_by_county(
+                    statefp=row.statefp, countyfp=row.countyfp, sample_size=50
+                )
+                if df is None:
+                    continue
+                df.to_sql("county", con, if_exists="append")
+            except ValueError:
+                print(
+                    f"Failed for state/{row.statefp}/county/{row.countyfp}",
+                )
+
+
+@blueprint.cli.command("states")
+def generate_states():
+    with sqlite3.connect("impacts.sqlite3") as con:
+        for row in app.operations.get_all_states().itertuples():
+            try:
+                print(row)
+                df = app.operations.compute_direct_industry_impacts_by_state(
+                    statefp=row.statefp, sample_size=50
+                )
+                if df is None:
+                    continue
+                df.to_sql("county", con, if_exists="append")
+            except ValueError:
+                print(f"Failed for state/{row.statefp}")

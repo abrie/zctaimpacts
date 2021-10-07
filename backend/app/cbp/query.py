@@ -24,8 +24,9 @@ def get_industries_by_zipcode(*, base_url, api_key, zipcode):
         return pandas.DataFrame()
 
     df = pandas.DataFrame.from_records(data[1:], columns=data[0])
-    df = df.astype({"ESTAB": "int32", "EMP": "int32"})
-    df = df[df["NAICS2017"].str.len() == 6]
+    df = df.rename(columns={"ESTAB": "establishments", "NAICS2017":"naics"})
+    df = df.astype({"establishments": "int32", "EMP": "int32"})
+    df = df[df["naics"].str.len() == 6]
 
     return df
 
@@ -48,8 +49,9 @@ def get_industries_by_county(*, base_url, api_key, statefp, countyfp):
         return pandas.DataFrame()
 
     df = pandas.DataFrame.from_records(data[1:], columns=data[0])
-    df = df.astype({"ESTAB": "int32", "EMP": "int32"})
-    df = df[df["NAICS2017"].str.len() == 6]
+    df = df.rename(columns={"ESTAB": "establishments", "NAICS2017":"naics"})
+    df = df.astype({"establishments": "int32", "EMP": "int32"})
+    df = df[df["naics"].str.len() == 6]
 
     return df
 
@@ -71,7 +73,8 @@ def get_industries_by_state(*, base_url, api_key, statefp):
         return pandas.DataFrame()
 
     df = pandas.DataFrame.from_records(data[1:], columns=data[0])
-    df = df.astype({"ESTAB": "int32", "EMP": "int32"})
-    df = df[df["NAICS2017"].str.len() == 6]
+    df = df.rename(columns={"ESTAB": "establishments", "NAICS2017":"naics"})
+    df = df.astype({"establishments": "int32", "EMP": "int32"})
+    df = df[df["naics"].str.len() == 6]
 
     return df

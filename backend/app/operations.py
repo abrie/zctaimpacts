@@ -151,7 +151,7 @@ def compute_direct_industry_impacts_by_zipcode(*, zipcode):
     return compute_direct_industry_impacts(industries_by_zipcode(zipcode=zipcode))
 
 
-def compute_direct_industry_impacts_by_county(statefp, countyfp, sample_size):
+def compute_direct_industry_impacts_by_county(statefp, countyfp):
     current_app.logger.info(
         f"Computing direct industry impact data for state/{statefp}/county/{countyfp}"
     )
@@ -160,7 +160,7 @@ def compute_direct_industry_impacts_by_county(statefp, countyfp, sample_size):
     )
 
 
-def compute_direct_industry_impacts_by_state(statefp, sample_size):
+def compute_direct_industry_impacts_by_state(statefp):
     current_app.logger.info(
         f"Computing direct industry impact data for state/{statefp}"
     )

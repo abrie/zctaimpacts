@@ -4,6 +4,7 @@ import json
 from flask import Blueprint, request, current_app
 
 import app.operations
+import app.gis.query
 from app.db import get_db
 
 
@@ -28,38 +29,31 @@ blueprint = Blueprint("query", __name__, url_prefix="/query")
 
 @blueprint.cli.command("indicators")
 def print_indicators():
-    indicators = app.operations.get_indicators_matrix()
-    print(indicators.to_html())
+    print(app.operations.get_indicators_matrix().to_html())
 
 
 @blueprint.route("/indicators", methods=["GET"])
 def serve_indicators():
-    indicators = app.operations.get_indicators_matrix()
-    return {"indicators": indicators.to_dict("records")}
+    return {"indicators": app.operations.get_indicators_matrix().to_dict("records")}
 
 
 @blueprint.cli.command("industries_by_county")
-@click.argument("state")
-@click.argument("county")
+@click.argument("state", type=int)
+@click.argument("county", type=int)
 def print_industries_by_county(state, county):
-    industries = app.operations.industries_by_county(
-        statefp=int(state), countyfp=int(county)
-    )
-    print(industries.to_html())
+    print(app.operations.industries_by_county(statefp=state, countyfp=county).to_html())
 
 
 @blueprint.cli.command("industries_by_state")
-@click.argument("state")
+@click.argument("state", type=int)
 def print_industries_by_state(state):
-    industries = app.operations.industries_by_state(statefp=int(state))
-    print(industries.to_html())
+    print(app.operations.industries_by_state(statefp=state).to_html())
 
 
 @blueprint.cli.command("industries_by_zipcode")
-@click.argument("zipcode")
+@click.argument("zipcode", type=int)
 def print_industries_by_zipcode(zipcode):
-    industries = app.operations.industries_by_zipcode(zipcode=zipcode)
-    print(industries.to_html())
+    print(app.operations.industries_by_zipcode(zipcode=zipcode).to_html())
 
 
 @blueprint.cli.command("direct_impacts_matrix")
@@ -68,7 +62,7 @@ def print_direct_impacts_matrix():
 
 
 @blueprint.cli.command("direct_industry_impacts_by_zipcode")
-@click.argument("zipcode")
+@click.argument("zipcode", type=int)
 def print_direct_industry_impacts_by_zipcode(zipcode):
     print(
         app.operations.get_direct_industry_impacts_by_zipcode(zipcode=zipcode).to_html()
@@ -76,20 +70,19 @@ def print_direct_industry_impacts_by_zipcode(zipcode):
 
 
 @blueprint.cli.command("direct_industry_impacts_by_county")
-@click.argument("state")
-@click.argument("county")
+@click.argument("state", type=int)
+@click.argument("county", type=int)
 def print_direct_industry_impacts_by_county(state, county):
     print(app.operations.get_direct_industry_impacts_by_county(state, county).to_html())
 
 
 @blueprint.cli.command("direct_industry_impacts_by_state")
-@click.argument("state")
+@click.argument("state", type=int)
 def print_direct_industry_impacts_by_state(state):
     print(app.operations.get_direct_industry_impacts_by_state(state).to_html())
 
 
 @blueprint.cli.command("sector_crosswalk")
-# @click.argument('name')
 def print_sector_crosswalk():
     print(json.dumps(app.operations.get_sector_crosswalk().to_dict("records")))
 
@@ -100,7 +93,7 @@ def print_all_counties():
 
 
 @blueprint.cli.command("counties_by_state")
-@click.argument("statefp")
+@click.argument("statefp", type=int)
 def print_counties_by_state(statefp):
     print(
         json.dumps(

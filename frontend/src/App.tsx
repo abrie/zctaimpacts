@@ -28,6 +28,7 @@ const blankSearchHits = {
   counties: [],
   zipcodes: [],
 };
+
 export default function App() {
   const [showProgress, setShowProgress] = useState<boolean>(false);
   const [search, setSearch] = useState<Search | undefined>(undefined);
@@ -160,10 +161,16 @@ export default function App() {
     <div className="p-1 container flex flex-col h-screen max-h-screen mx-auto">
       <Header errorMessage={errorMessage} />
       <div className="flex flex-col flex-grow">
-        <SearchInput
-          searchTerms={searchTerms}
-          setSearchTerms={(terms) => setSearchTerms(terms)}
-        />
+        {search ? (
+          <SearchInput
+            searchTerms={searchTerms}
+            setSearchTerms={(terms) => setSearchTerms(terms)}
+          />
+        ) : (
+          <div className="border border-black p-2 text-gray-500 bg-gray-50 rounded-md border-gray-400 font-bold">
+            Downloading stuff to search...
+          </div>
+        )}
         <SearchHitsView
           hits={searchHits}
           onStateSelected={(val: State) => {

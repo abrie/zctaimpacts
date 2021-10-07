@@ -129,6 +129,7 @@ export function SearchInput({
         <FaSearch />
       </span>
       <input
+        autoFocus
         className="w-full p-2 border-0 "
         type="text"
         value={searchTerms}

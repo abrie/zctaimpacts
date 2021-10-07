@@ -139,12 +139,34 @@ export function SearchInput({
   );
 }
 
+export interface SearchHitsViewParams {
+  hits: SearchHits;
+  onStateSelected: (val: State) => void;
+  onCountySelected: (val: County) => void;
+  onZipcodeSelected: (val: Zipcode) => void;
+}
+
+export function SearchHitsView({
+  hits,
+  onStateSelected,
+  onCountySelected,
+  onZipcodeSelected,
+}: SearchHitsViewParams): JSX.Element {
+  return (
+    <>
+      <StateSearchHits hits={hits.states} onSelect={onStateSelected} />
+      <CountySearchHits hits={hits.counties} onSelect={onCountySelected} />
+      <ZipcodeSearchHits hits={hits.zipcodes} onSelect={onZipcodeSelected} />
+    </>
+  );
+}
+
 interface CountySearchHitsParams {
   onSelect: (county: County) => void;
   hits: County[];
 }
 
-export function CountySearchHits({
+function CountySearchHits({
   onSelect,
   hits,
 }: CountySearchHitsParams): JSX.Element {
@@ -173,7 +195,7 @@ interface ZipcodeSearchHitsParams {
   hits: Zipcode[];
 }
 
-export function ZipcodeSearchHits({
+function ZipcodeSearchHits({
   onSelect,
   hits,
 }: ZipcodeSearchHitsParams): JSX.Element {
@@ -202,7 +224,7 @@ interface StateSearchHitsParams {
   hits: State[];
 }
 
-export function StateSearchHits({
+function StateSearchHits({
   onSelect,
   hits,
 }: StateSearchHitsParams): JSX.Element {

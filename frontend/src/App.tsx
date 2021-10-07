@@ -4,12 +4,10 @@ import { ProgressBar } from "./ProgressBar";
 import { Header } from "./HeaderFooter";
 import { ImpactLabel, ImpactLabelParams } from "./ImpactLabel";
 import {
-  SearchInput,
-  StateSearchHits,
-  CountySearchHits,
-  ZipcodeSearchHits,
   Search,
   SearchHits,
+  SearchInput,
+  SearchHitsView,
   buildSearch,
 } from "./Search";
 import type {
@@ -166,26 +164,20 @@ export default function App() {
           searchTerms={searchTerms}
           setSearchTerms={(terms) => setSearchTerms(terms)}
         />
-        <StateSearchHits
-          onSelect={(state) => {
+        <SearchHitsView
+          hits={searchHits}
+          onStateSelected={(val: State) => {
             clearSearchBox();
-            loadStateImpacts(state);
+            loadStateImpacts(val);
           }}
-          hits={searchHits.states}
-        />
-        <CountySearchHits
-          onSelect={(county) => {
+          onCountySelected={(val: County) => {
             clearSearchBox();
-            loadCountyImpacts(county);
+            loadCountyImpacts(val);
           }}
-          hits={searchHits.counties}
-        />
-        <ZipcodeSearchHits
-          onSelect={(zipcode) => {
+          onZipcodeSelected={(val: Zipcode) => {
             clearSearchBox();
-            loadZipcodeImpacts(zipcode);
+            loadZipcodeImpacts(val);
           }}
-          hits={searchHits.zipcodes}
         />
         <ProgressBar active={showProgress} />
         {impacts.map((impactLabelParams: ImpactLabelParams) => (

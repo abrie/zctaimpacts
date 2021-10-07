@@ -2,12 +2,47 @@ import { County, Zipcode, State } from "./Api";
 import lunr from "lunr";
 import { FaSearch } from "react-icons/fa";
 
-export interface StateSearch {
+export interface SearchHits {
+  states: State[];
+  zipcodes: Zipcode[];
+  counties: County[];
+}
+
+export interface Search {
+  search: (terms: string) => SearchHits;
+}
+
+interface StateSearch {
   index: State[];
   search: (terms: string) => State[];
 }
 
-export function buildStateSearch(documents: State[]): StateSearch {
+interface BuildSearchParams {
+  states: State[];
+  counties: County[];
+  zipcodes: Zipcode[];
+}
+
+export function buildSearch({
+  states,
+  counties,
+  zipcodes,
+}: BuildSearchParams): Search {
+  const stateSearch = buildStateSearch(states);
+  const countySearch = buildCountySearch(counties);
+  const zipcodeSearch = buildZipcodeSearch(zipcodes);
+  return {
+    search: (terms: string) => {
+      return {
+        states: stateSearch.search(terms),
+        counties: countySearch.search(terms),
+        zipcodes: zipcodeSearch.search(terms),
+      };
+    },
+  };
+}
+
+function buildStateSearch(documents: State[]): StateSearch {
   const index = documents;
   const search = (terms: string): State[] => {
     return index.filter((state: State) =>
@@ -21,12 +56,12 @@ export function buildStateSearch(documents: State[]): StateSearch {
   };
 }
 
-export interface ZipcodeSearch {
+interface ZipcodeSearch {
   index: Zipcode[];
   search: (terms: string) => Zipcode[];
 }
 
-export function buildZipcodeSearch(documents: Zipcode[]): ZipcodeSearch {
+function buildZipcodeSearch(documents: Zipcode[]): ZipcodeSearch {
   const index = documents;
   const search = (terms: string): Zipcode[] => {
     return index.filter((zipcode: Zipcode) =>
@@ -40,13 +75,13 @@ export function buildZipcodeSearch(documents: Zipcode[]): ZipcodeSearch {
   };
 }
 
-export interface CountySearch {
+interface CountySearch {
   index: lunr.Index;
   lookup: Record<string, County>;
   search: (terms: string) => County[];
 }
 
-export function buildCountySearch(documents: County[]): CountySearch {
+function buildCountySearch(documents: County[]): CountySearch {
   const index = buildCountyIndex(documents);
   const lookup = buildCountyLookup(documents);
   const search = (terms: string): County[] =>

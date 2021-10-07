@@ -8,12 +8,9 @@ import {
   StateSearchHits,
   CountySearchHits,
   ZipcodeSearchHits,
-  buildCountySearch,
-  buildZipcodeSearch,
-  buildStateSearch,
-  CountySearch,
-  ZipcodeSearch,
-  StateSearch,
+  Search,
+  SearchHits,
+  buildSearch,
 } from "./Search";
 import type {
   State,
@@ -28,21 +25,16 @@ import type {
 } from "./Api";
 import { Indicators } from "./Api";
 
+const blankSearchHits = {
+  states: [],
+  counties: [],
+  zipcodes: [],
+};
 export default function App() {
   const [showProgress, setShowProgress] = useState<boolean>(false);
-  const [stateHits, setStateHits] = useState<State[]>([]);
-  const [countyHits, setCountyHits] = useState<County[]>([]);
-  const [zipcodeHits, setZipcodeHits] = useState<Zipcode[]>([]);
+  const [search, setSearch] = useState<Search | undefined>(undefined);
+  const [searchHits, setSearchHits] = useState<SearchHits>(blankSearchHits);
   const [searchTerms, setSearchTerms] = useState<string>("");
-  const [countySearch, setCountySearch] = useState<CountySearch | undefined>(
-    undefined
-  );
-  const [zipcodeSearch, setZipcodeSearch] = useState<ZipcodeSearch | undefined>(
-    undefined
-  );
-  const [stateSearch, setStateSearch] = useState<StateSearch | undefined>(
-    undefined
-  );
   const [impacts, setImpacts] = useState<ImpactLabelParams[]>([]);
   const [errorMessage, setErrorMessage] = useState<string | undefined>(
     undefined
@@ -50,45 +42,35 @@ export default function App() {
 
   useEffect(() => {
     (async () => {
-      const response = await axios.get<QueryCountyResponse>(
-        "/query/county/all"
+      const [
+        countiesResponse,
+        statesResponse,
+        zipcodesResponse,
+      ] = await Promise.all([
+        axios.get<QueryCountyResponse>("/query/county/all"),
+        axios.get<QueryStateResponse>("/query/state/all"),
+        axios.get<QueryZipcodeResponse>("/query/zipcode/all"),
+      ]);
+
+      setSearch(
+        buildSearch({
+          counties: countiesResponse.data.results,
+          zipcodes: zipcodesResponse.data.results,
+          states: statesResponse.data.results,
+        })
       );
-
-      setCountySearch(buildCountySearch(response.data.results));
     })();
   }, []);
 
   useEffect(() => {
-    (async () => {
-      const response = await axios.get<QueryStateResponse>("/query/state/all");
-
-      setStateSearch(buildStateSearch(response.data.results));
-    })();
-  }, []);
-
-  useEffect(() => {
-    (async () => {
-      const response = await axios.get<QueryZipcodeResponse>(
-        "/query/zipcode/all"
-      );
-
-      setZipcodeSearch(buildZipcodeSearch(response.data.results));
-    })();
-  }, []);
-
-  useEffect(() => {
-    if (countySearch && zipcodeSearch && stateSearch && searchTerms) {
-      setStateHits(stateSearch.search(searchTerms));
-      setCountyHits(countySearch.search(searchTerms));
-      setZipcodeHits(zipcodeSearch.search(searchTerms));
+    if (search && searchTerms) {
+      setSearchHits(search.search(searchTerms));
     }
-  }, [searchTerms, stateSearch, countySearch, zipcodeSearch]);
+  }, [searchTerms, search]);
 
   function clearSearchBox() {
     setSearchTerms("");
-    setStateHits([]);
-    setCountyHits([]);
-    setZipcodeHits([]);
+    setSearchHits(blankSearchHits);
   }
 
   async function loadCountyImpacts(county: County) {
@@ -189,21 +171,21 @@ export default function App() {
             clearSearchBox();
             loadStateImpacts(state);
           }}
-          hits={stateHits}
+          hits={searchHits.states}
         />
         <CountySearchHits
           onSelect={(county) => {
             clearSearchBox();
             loadCountyImpacts(county);
           }}
-          hits={countyHits}
+          hits={searchHits.counties}
         />
         <ZipcodeSearchHits
           onSelect={(zipcode) => {
             clearSearchBox();
             loadZipcodeImpacts(zipcode);
           }}
-          hits={zipcodeHits}
+          hits={searchHits.zipcodes}
         />
         <ProgressBar active={showProgress} />
         {impacts.map((impactLabelParams: ImpactLabelParams) => (

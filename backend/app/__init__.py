@@ -19,7 +19,7 @@ def create_app(test_config=None):
         SECRET_KEY="dev",
         DATABASE=os.path.join(app.instance_path, "db.spatialite"),
         CBP_DATABASE=os.path.join(app.instance_path, "cbp.sqlite3"),
-        PRECOMPUTED_DATABASE=os.path.join(app.instance_path, "precomputed.sqlite3"),
+        IMPACTS_DATABASE=os.path.join(app.instance_path, "impacts.sqlite3"),
     )
 
     if test_config is None:

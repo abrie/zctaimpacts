@@ -26,7 +26,18 @@ def get_cbp_db():
     return g.cbp_db
 
 
-def close_db():
+def get_impacts_db():
+    if "impacts_db" not in g:
+        g.impacts_db = sqlite3.connect(
+            current_app.config["IMPACTS_DATABASE"], detect_types=sqlite3.PARSE_DECLTYPES
+        )
+        g.impacts_db.text_factory = lambda b: b.decode(errors="ignore")
+        g.impacts_db.row_factory = sqlite3.Row
+
+    return g.impacts_db
+
+
+def close_dbs():
     db = g.pop("db", None)
 
     if db is not None:
@@ -37,6 +48,11 @@ def close_db():
     if cbp_db is not None:
         cbp_db.close()
 
+    impacts_db = g.pop("impacts_db", None)
+
+    if impacts_db is not None:
+        impacts_db.close()
+
 
 def init_app(app):
-    app.teardown_appcontext(close_db)
+    app.teardown_appcontext(close_dbs)

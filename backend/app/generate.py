@@ -12,11 +12,12 @@ def generate_zipcodes():
             try:
                 print(row)
                 df = app.operations.compute_direct_industry_impacts_by_zipcode(
-                    zipcode=row.zipcode, sample_size=50
+                    zipcode=row.zipcode
                 )
                 if df is None:
                     continue
-                df.to_sql("zipcode", con, if_exists="append")
+                df["zipcode"] = row.zipcode
+                df.to_sql("zipcode", con, if_exists="append", index_label="zipcode")
             except ValueError:
                 print("Failed for zipcode:", row.zipcode)
 
@@ -32,7 +33,14 @@ def generate_counties():
                 )
                 if df is None:
                     continue
-                df.to_sql("county", con, if_exists="append")
+                df["countyfp"] = row.countyfp
+                df["statefp"] = row.statefp
+                df.to_sql(
+                    "county",
+                    con,
+                    if_exists="append",
+                    index_label=["statefp", "countyfp"],
+                )
             except ValueError:
                 print(
                     f"Failed for state/{row.statefp}/county/{row.countyfp}",
@@ -50,6 +58,7 @@ def generate_states():
                 )
                 if df is None:
                     continue
-                df.to_sql("county", con, if_exists="append")
+                df["statefp"] = row.statefp
+                df.to_sql("state", con, if_exists="append", index_label="statefp")
             except ValueError:
                 print(f"Failed for state/{row.statefp}")

@@ -69,32 +69,23 @@ def print_direct_impacts_matrix():
 
 @blueprint.cli.command("direct_industry_impacts_by_zipcode")
 @click.argument("zipcode")
-@click.option("--sample_size", default=100)
-def print_direct_industry_impacts_by_zipcode(zipcode, sample_size):
+def print_direct_industry_impacts_by_zipcode(zipcode):
     print(
-        app.operations.direct_industry_impacts_by_zipcode(
-            zipcode=zipcode, sample_size=sample_size
-        ).to_html()
+        app.operations.get_direct_industry_impacts_by_zipcode(zipcode=zipcode).to_html()
     )
 
 
 @blueprint.cli.command("direct_industry_impacts_by_county")
 @click.argument("state")
 @click.argument("county")
-@click.option("--sample_size", default=100)
-def print_direct_industry_impacts_by_county(state, county, sample_size):
-    print(
-        app.operations.direct_industry_impacts_by_county(
-            state, county, sample_size
-        ).to_html()
-    )
+def print_direct_industry_impacts_by_county(state, county):
+    print(app.operations.get_direct_industry_impacts_by_county(state, county).to_html())
 
 
 @blueprint.cli.command("direct_industry_impacts_by_state")
 @click.argument("state")
-@click.option("--sample_size", default=100)
-def print_direct_industry_impacts_by_state(state, sample_size):
-    print(app.operations.direct_industry_impacts_by_state(state, sample_size).to_html())
+def print_direct_industry_impacts_by_state(state):
+    print(app.operations.get_direct_industry_impacts_by_state(state).to_html())
 
 
 @blueprint.cli.command("sector_crosswalk")
@@ -202,9 +193,8 @@ def serve_direct_industry_impacts_by_zipcode():
         "type": "object",
         "properties": {
             "zipcode": {"type": "string"},
-            "sampleSize": {"type": "number"},
         },
-        "required": ["zipcode", "sampleSize"],
+        "required": ["zipcode"],
     }
 
     jsonschema.validate(instance=params, schema=schema)
@@ -213,8 +203,8 @@ def serve_direct_industry_impacts_by_zipcode():
         f"Processing request for impact data for zipcode {params['zipcode']}"
     )
 
-    industries = app.operations.direct_industry_impacts_by_zipcode(
-        zipcode=params["zipcode"], sample_size=params["sampleSize"]
+    industries = app.operations.get_direct_industry_impacts_by_zipcode(
+        zipcode=params["zipcode"]
     )
 
     current_app.logger.info(f"Computed impact data for zipcode {params['zipcode']}")
@@ -235,9 +225,8 @@ def serve_direct_industry_impacts_by_county():
         "properties": {
             "statefp": {"type": "number"},
             "countyfp": {"type": "number"},
-            "sampleSize": {"type": "number"},
         },
-        "required": ["statefp", "countyfp", "sampleSize"],
+        "required": ["statefp", "countyfp"],
     }
 
     jsonschema.validate(instance=params, schema=schema)
@@ -246,8 +235,8 @@ def serve_direct_industry_impacts_by_county():
         f"Processing request for impact data for {params['statefp']} {params['countyfp']}"
     )
 
-    industries = app.operations.direct_industry_impacts_by_county(
-        params["statefp"], params["countyfp"], params["sampleSize"]
+    industries = app.operations.get_direct_industry_impacts_by_county(
+        params["statefp"], params["countyfp"]
     )
 
     current_app.logger.info(
@@ -269,9 +258,8 @@ def serve_direct_industry_impacts_by_state():
         "type": "object",
         "properties": {
             "statefp": {"type": "number"},
-            "sampleSize": {"type": "number"},
         },
-        "required": ["statefp", "sampleSize"],
+        "required": ["statefp"],
     }
 
     jsonschema.validate(instance=params, schema=schema)
@@ -280,9 +268,7 @@ def serve_direct_industry_impacts_by_state():
         f"Processing request for impact data for state/{params['statefp']}"
     )
 
-    industries = app.operations.direct_industry_impacts_by_state(
-        params["statefp"], params["sampleSize"]
-    )
+    industries = app.operations.get_direct_industry_impacts_by_state(params["statefp"])
 
     current_app.logger.info(f"Computed impact data for state/{params['statefp']}")
 

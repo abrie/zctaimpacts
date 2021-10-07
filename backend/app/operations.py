@@ -8,7 +8,7 @@ import app.useeio.matrices
 import app.gis.query
 import app.cbp.query
 import app.cbp.database
-from app.db import get_db, get_cbp_db
+from app.db import get_db, get_cbp_db, get_impacts_db
 
 
 def get_sector_crosswalk():
@@ -109,6 +109,39 @@ def compute_direct_industry_impacts(industries) -> Union[pandas.DataFrame, None]
     aggregated = grouped.agg(aggregate_default | aggregate_impacts)
 
     return aggregated
+
+
+def get_direct_industry_impacts_by_zipcode(*, zipcode) -> Union[pandas.DataFrame, None]:
+    current_app.logger.info(
+        f"Getting direct industry impact data for zipcode/{zipcode}"
+    )
+    return pandas.read_sql(
+        "SELECT * from zipcode where zipcode=:zipcode",
+        get_impacts_db(),
+        params={"zipcode": zipcode},
+    )
+
+
+def get_direct_industry_impacts_by_county(
+    statefp, countyfp
+) -> Union[pandas.DataFrame, None]:
+    current_app.logger.info(
+        f"Getting direct industry impact data for state/{statefp}/county/{countyfp}"
+    )
+    return pandas.read_sql(
+        "SELECT * from county where statefp=:statefp AND countyfp=:countyfp",
+        get_impacts_db(),
+        params={"statefp": statefp, "countyfp": countyfp},
+    )
+
+
+def get_direct_industry_impacts_by_state(statefp) -> Union[pandas.DataFrame, None]:
+    current_app.logger.info(f"Getting direct industry impact data for state/{statefp}")
+    return pandas.read_sql(
+        "SELECT * from county where statefp=:statefp",
+        get_impacts_db(),
+        params={"statefp": statefp},
+    )
 
 
 def compute_direct_industry_impacts_by_zipcode(*, zipcode):

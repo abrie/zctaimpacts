@@ -255,16 +255,16 @@ export interface Indicator {
 }
 
 export interface Industry {
-  "Acidification Potential": number;
+  naics: string;
+  establishments: number;
   BEA_2012_Detail_Waste_Disagg: string;
   BEA_Detail: string[];
   BEA_Sector: string;
   BEA_Summary: string;
+  "Acidification Potential": number;
   "Commercial Construction and Demolition Debris": number;
   "Commercial Municipal Solid Waste": number;
   "Commercial RCRA Hazardous Waste": number;
-  EMP: string;
-  ESTAB: string;
   "Energy Use": number;
   "Eutrophication Potential": number;
   "Freshwater Ecotoxicity Potential": number;
@@ -278,16 +278,12 @@ export interface Industry {
   "Jobs Supported": number;
   "Land use": number;
   "Minerals and Metals Use": number;
-  NAICS: string;
-  NAICS2017: string;
   "Nonrenewable Energy Use": number;
   "Ozone Depletion": number;
   Pesticides: number;
   "Renewable Energy Use": number;
   "Smog Formation Potential": number;
   "Value Added": number;
-  county: string;
-  state: string;
   [field: string]: number | string | string[];
 }
 

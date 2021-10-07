@@ -95,7 +95,6 @@ export default function App() {
     const data = {
       statefp: county.statefp,
       countyfp: county.countyfp,
-      sampleSize: 50,
     };
 
     try {
@@ -124,7 +123,6 @@ export default function App() {
   async function loadStateImpacts(state: State) {
     const data = {
       statefp: state.statefp,
-      sampleSize: 50,
     };
 
     try {
@@ -153,7 +151,6 @@ export default function App() {
   async function loadZipcodeImpacts(zipcode: Zipcode) {
     const data = {
       zipcode: zipcode.zipcode,
-      sampleSize: 50,
     };
 
     try {

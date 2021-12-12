@@ -1,5 +1,0 @@
-https://www2.census.gov/geo/tiger/TIGER2020/COUNTY/tl_2020_us_county.zip
-https://www2.census.gov/geo/tiger/TIGER2020/ZCTA520/tl_2020_us_zcta520.zip
-https://www2.census.gov/geo/tiger/TIGER2020/STATE/tl_2020_us_state.zip
-https://raw.githubusercontent.com/kjhealy/fips-codes/master/state_fips_master.csv
-https://raw.githubusercontent.com/kjhealy/fips-codes/master/county_fips_master.csv

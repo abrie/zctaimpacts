@@ -1,8 +1,24 @@
 import sqlite3
+import json
+import pandas
 from flask import Blueprint
 import app.operations
+from app.db import get_impacts_db
 
 blueprint = Blueprint("generate", __name__, url_prefix="/generate")
+
+
+@blueprint.cli.command("counties-json")
+def generate_counties_json():
+    for row in app.operations.get_all_counties().itertuples():
+        df = pandas.read_sql(
+            "select * from county where geoid=:geoid",
+            get_impacts_db(),
+            params={"geoid": row.geoid},
+        )
+        print(row.geoid)
+        fname = f"counties/US{row.geoid}.pqt"
+        df.to_parquet(fname)
 
 
 @blueprint.cli.command("zipcodes")
@@ -29,22 +45,24 @@ def generate_counties():
             try:
                 print(row)
                 df = app.operations.compute_direct_industry_impacts_by_county(
-                    statefp=row.statefp, countyfp=row.countyfp, sample_size=50
+                    statefp=row.statefp, countyfp=row.countyfp
                 )
                 if df is None:
                     continue
                 df["countyfp"] = row.countyfp
                 df["statefp"] = row.statefp
+                df["geoid"] = row.geoid
                 df.to_sql(
                     "county",
                     con,
                     if_exists="append",
-                    index_label=["statefp", "countyfp"],
+                    index=False,
                 )
-            except ValueError:
+            except ValueError as e:
                 print(
                     f"Failed for state/{row.statefp}/county/{row.countyfp}",
                 )
+                print(e)
 
 
 @blueprint.cli.command("states")

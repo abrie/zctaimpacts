@@ -11,14 +11,47 @@ You are able to visit the live site for a UI, or query it using the API:
 
 `curl -X POST -H "Content-Type: application/json" -d '{"statefp":17,"countyfp":31}' http://localhost:5000/query/county/impacts`
 
+
+## Create Virtual Environment
+
+    python3 -m venv .venv
+
+OSX / Linux:
+
+	source .venv/bin/activate
+
+Windows:
+
+	\.venv\Scripts\activate.bat
+
+### Install Requirements.txt
+
+    pip install -r requirements.txt
+
+### Download File
+
+Download this file since it's too big for GitHub at 528 MB  
+https://www2.census.gov/geo/tiger/TIGER2020/ZCTA520/  
+Add to: backend/utils/spatial/downloads/tl_2020_us_zcta520.zip  
+
 ## Self Hosting
 
 There are two options: Docker, or from source. Both options require API keys and a local copy of the database.
 
+
 ### First, The Database
 The finished database is about 220 megabytes, and must be built from scratch. A utility script is provided:
-1. `cd backend/utils`
+1. `cd backend/utils/spatial`
 2. Execute `./build.sh`
+
+BUG - The following error occurs:  
+./build.sh: line 13: spatialite: command not found
+
+<!--
+If a small topojson file for zipcode boundaries is needed:
+https://model.earth/community/zip/leaflet/#columns=JobsAgriculture:50;JobsManufacturing:50
+-->
+
 3. Copy the resulting file `out/db.spatialite` file to `backend/instance`
 
 ### Next, API Keys
